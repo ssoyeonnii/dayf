@@ -1,0 +1,106 @@
+.calendar-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.grid-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.date-cell {
+  border-bottom: 1px solid #ddd;
+  padding: 0.5rem;
+  height: 80px;
+  width: 100px;
+  /* margin-left: 10px; */
+  text-align: start;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.grid-cols-7 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+.yoil-cell {
+  /* min-height: auto; */
+  color: black;
+  font-weight: bold;
+}
+
+.sp_yoil {
+  padding-left: 7px;
+}
+
+.text-holiday {
+  font-size: 11px;
+  color: #000;
+}
+
+.sp_holiday {
+  color: red;
+}
+
+.text-red-500 {
+  color: red;
+  border-bottom: 1px solid red;
+}
+
+.text-gray-500 {
+  color: gray;
+  border-bottom: 1px solid grey;
+}
+
+.today-cell {
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  font-weight: bold;
+  /* min-width: 50px; */
+  width: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.date-text {
+  width: 100%;
+  padding-left: 7px;
+}
+
+.div_header_container {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+}
+.div_header_center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 60%;
+}
+.div_header_year,
+.div_header_month {
+  width: 15%;
+}
+
+.btn_prev_month {
+}
+
+.btn_next_month {
+}
