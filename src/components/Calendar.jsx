@@ -2,57 +2,68 @@ import { useEffect, useState } from "react";
 import CalendarHeader from "./CalendarHeader";
 import ShiftCells from "./ShiftCells";
 import { HolidayUtils } from "../utils/HolidayUtils";
+import { ShiftUtils } from "../utils/ShiftUtils";
 
 const API_KEY = "AIzaSyCijUEfTJHi9IV_WrUloBy9eI8iGNk-UXQ"; // 보안상 실제 환경에선 환경변수 처리 필요
 
 function Calendar() {
   // 📌 현재 연도/월 상태 관리
   const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth()); // 0~11
+  const [date, setDate] = useState({
+    year: today.getFullYear(),
+    month: today.getMonth(), // 0-based
+  });
 
   const [holidays, setHolidays] = useState([]);
+  const [shifts, setShifts] = useState({});
 
   useEffect(() => {
-    const loadHolidays = async () => {
-      const data = await HolidayUtils(year, API_KEY);
-      setHolidays(data);
+    const loadHolidaysAndShifts = async () => {
+      const [holidaysData, shiftsData] = await Promise.all([
+        HolidayUtils(date.year, API_KEY),
+        ShiftUtils(date.year, date.month),
+      ]);
+      setHolidays(holidaysData);
+      setShifts(shiftsData);
     };
 
-    loadHolidays();
-  }, [year]); // 연도가 바뀌면 새로 로딩
+    loadHolidaysAndShifts();
+  }, [date.year, date.month]); // 연도, 월이 바뀌면
 
-  // 📌 월 이동 함수
+  // 월 이동 함수
   const goToPrevMonth = () => {
-    setMonth((prev) => {
-      if (prev === 0) {
-        setYear((y) => y - 1);
-        return 11;
+    setDate((prev) => {
+      if (prev.month === 0) {
+        return { year: prev.year - 1, month: 11 };
       }
-      return prev - 1;
+      return { ...prev, month: prev.month - 1 };
     });
   };
 
   const goToNextMonth = () => {
-    setMonth((prev) => {
-      if (prev === 11) {
-        setYear((y) => y + 1);
-        return 0;
+    setDate((prev) => {
+      if (prev.month === 11) {
+        return { year: prev.year + 1, month: 0 };
       }
-      return prev + 1;
+      return { ...prev, month: prev.month + 1 };
     });
   };
 
   return (
     <div className="calendar-container">
       <CalendarHeader
-        year={year}
-        month={month}
+        year={date.year}
+        month={date.month}
         onPrevMonth={goToPrevMonth}
         onNextMonth={goToNextMonth}
       />
 
-      <ShiftCells year={year} month={month} holidays={holidays} />
+      <ShiftCells
+        year={date.year}
+        month={date.month}
+        holidays={holidays}
+        shifts={shifts}
+      />
     </div>
   );
 }

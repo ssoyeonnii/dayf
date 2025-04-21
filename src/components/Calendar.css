@@ -15,9 +15,8 @@
 }
 
 .date-cell {
-  border-bottom: 1px solid #ddd;
+  /* border-bottom: 1px solid #ddd; */
   padding: 0.5rem;
-  height: 80px;
   width: 100px;
   /* margin-left: 10px; */
   text-align: start;
@@ -26,10 +25,20 @@
   box-sizing: border-box;
 }
 
+.date-cell.empty.five-weeks,
+.date-cell.date.five-weeks {
+  height: 80px;
+}
+
+.date-cell.empty.six-weeks,
+.date-cell.date.six-weeks {
+  height: 68px;
+}
+
 .grid-cols-7 {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
+  /* gap: 5px; */
 }
 
 .yoil-cell {
@@ -53,20 +62,28 @@
 
 .text-red-500 {
   color: red;
-  border-bottom: 1px solid red;
+  /* border-bottom: 1px solid red; */
 }
 
 .text-gray-500 {
   color: gray;
-  border-bottom: 1px solid grey;
+  /* border-bottom: 1px solid grey; */
+}
+
+.date_gray {
+  color: gray;
+}
+
+.date_red {
+  color: red;
 }
 
 .today-cell {
   border-radius: 50%;
-  background-color: #f0f0f0;
+  /* background-color: #f0f0f0; */
   font-weight: bold;
   /* min-width: 50px; */
-  width: 50px;
+  width: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -81,7 +98,7 @@
   display: flex;
   width: 100%;
   max-width: 1200px;
-  margin: 0 auto;
+  margin: 5px auto;
   justify-content: space-between;
   align-items: center;
   text-align: center;
@@ -99,8 +116,34 @@
   width: 15%;
 }
 
-.btn_prev_month {
+.div_header_year {
+  font-size: 12px;
 }
 
+.btn_prev_month,
 .btn_next_month {
+  background-color: #ffffff;
+  font-size: 15px;
+}
+
+.btn_prev_month:hover,
+.btn_next_month:hover {
+  background-color: #ffffff;
+  border-color: #f0f0f0;
+}
+
+.btn_prev_month .svg_left,
+.btn_next_month .svg_right {
+  width: 15px;
+  height: 15px;
+}
+
+.shiftwork_day {
+  background-color: bisque;
+}
+.shiftwork_evening {
+  background-color: rgb(243, 188, 237);
+}
+.shiftwork_night {
+  background-color: rgb(146, 168, 236);
 }

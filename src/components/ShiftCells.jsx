@@ -2,7 +2,7 @@ import React from "react";
 import "./Calendar.css";
 
 // 개별 날짜 셀 (근무 유형 표시)
-function ShiftCells({ year, month, holidays }) {
+function ShiftCells({ year, month, holidays, shifts }) {
   const today = new Date();
   const todayDate = String(today.getDate()).padStart(2, "0"); // 일
   const todayMonth = String(today.getMonth() + 1).padStart(2, "0"); // 0부터 시작하므로 +1
@@ -22,13 +22,21 @@ function ShiftCells({ year, month, holidays }) {
   // 이번 달 마지막 날짜
   const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
 
+  const totalCells = firstDay + lastDate;
+  const isSixRows = totalCells > 35;
+
   // 1일 이전 요일만큼 빈 칸 생성
   for (let i = 0; i < firstDay; i++) {
-    dates.push(<div key={`empty-${i}`} className="date-cell empty"></div>);
+    dates.push(
+      <div
+        key={`empty-${i}`}
+        className={`date-cell empty ${isSixRows ? "six-weeks" : "five-weeks"}`}
+      ></div>
+    );
   }
 
   // 1일부터 마지막 날짜까지 날짜 셀 생성
-  for (let day = 1; day <= 31; day++) {
+  for (let day = 1; day <= lastDate; day++) {
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(
       2,
       "0"
@@ -36,22 +44,40 @@ function ShiftCells({ year, month, holidays }) {
     const holiday = holidays.find((h) => h.date === dateStr);
 
     const isToday = formattedToday === dateStr;
-    // dates.push(
-    //   <div key={day} className="date-cell">
-    //     <div className="today-cell">
-    //       <span>{day}</span>
-    //       {holiday && <div className="text-holiday">{holiday.title}</div>}
-    //     </div>
-    //   </div>
-    // );
+
+    const weekDay = new Date(currentYear, currentMonth, day).getDay(); //weekday 0 :일요일 6: 토요일
+    let cellClass = "date-cell date";
+    if (isSixRows) {
+      cellClass += " six-weeks";
+    } else {
+      cellClass += " five-weeks";
+    }
+    if (weekDay === 0) cellClass += " date_red";
+    else if (weekDay === 6) cellClass += " date_gray";
+
+    // 근무 유형별 색상 클래스 추가
+    const shift = shifts[dateStr];
+    if (shift === "주간") cellClass += " shiftwork_day";
+    else if (shift === "야간") cellClass += " shiftwork_night";
+    else if (shift === "오후") cellClass += " shiftwork_evening";
+
     dates.push(
-      <div key={day} className="date-cell">
+      <div key={day} className={cellClass}>
         <div className={isToday ? "today-cell" : "date-text"}>
-          {/* {holiday && <div className="text-holiday">{holiday.title}</div>} */}
           {holiday ? (
             <>
               <span className="sp_holiday">{day}</span>
-              <div className="text-holiday">{holiday.title}</div>
+              <div className="text-holiday">
+                {holiday.title.includes("쉬는 날") ? (
+                  <>
+                    {holiday.title.replace("쉬는 날", "").trim()}
+                    <br />
+                    {"대체공휴일"}
+                  </>
+                ) : (
+                  holiday.title
+                )}
+              </div>
             </>
           ) : (
             <span>{day}</span>
@@ -74,8 +100,11 @@ function ShiftCells({ year, month, holidays }) {
             <span className="sp_yoil">{day}</span>
           </div>
         ))}
+
+        {dates.map((date) => (
+          <div key={date.key}>{date}</div>
+        ))}
       </div>
-      <div className="grid-cols-7">{dates}</div>
     </div>
   );
 }

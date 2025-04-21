@@ -12,10 +12,30 @@ export async function HolidayUtils(year, apiKey) {
   const response = await fetch(url);
   const data = await response.json();
 
-  const holidays = data.items.map((event) => ({
-    date: event.start.date,
-    title: event.summary,
-  }));
+  // 비공식 기념일
+  const unofficialTitles = [
+    "크리스마스 이브",
+    "Christmas Eve",
+    "발렌타인데이",
+    "화이트데이",
+    "어버이날",
+    "할로윈",
+    "식목일",
+    "스승의날",
+    "제헌절",
+    "섣달 그믐날",
+  ];
+
+  const holidays = data.items
+    .filter((event) => {
+      return !unofficialTitles.some((title) =>
+        event.summary.toLowerCase().includes(title.toLowerCase())
+      );
+    })
+    .map((event) => ({
+      date: event.start.date,
+      title: event.summary,
+    }));
 
   return holidays;
 }
