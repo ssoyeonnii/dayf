@@ -83,6 +83,9 @@ function ShiftCells({ year, month, holidays, shifts }) {
             <span>{day}</span>
           )}
         </div>
+        <span className="shiftwork_name">
+          {["주간", "야간", "오후"].includes(shift) ? shift : ""}
+        </span>
       </div>
     );
   }

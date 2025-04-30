@@ -16,13 +16,14 @@
 
 .date-cell {
   /* border-bottom: 1px solid #ddd; */
-  padding: 0.5rem;
+  /* padding: 0.5rem; */
   width: 100px;
   /* margin-left: 10px; */
   text-align: start;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  justify-content: space-between;
 }
 
 .date-cell.empty.five-weeks,
@@ -79,7 +80,7 @@
 }
 
 .today-cell {
-  border-radius: 50%;
+  /* border-radius: 50%; */
   /* background-color: #f0f0f0; */
   font-weight: bold;
   /* min-width: 50px; */
@@ -87,6 +88,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  border-bottom: 2px solid;
+}
+
+.shiftwork_name {
+  color: black;
+  text-align: center;
+  font-size: 12px;
 }
 
 .date-text {
@@ -111,9 +119,34 @@
   text-align: center;
   width: 60%;
 }
+
+.react-datepicker-popper {
+  top: -20px !important;
+}
+
 .div_header_year,
 .div_header_month {
   width: 15%;
+}
+
+.div_header_container .div_legend_container {
+  display: flex;
+  width: 35%;
+  justify-content: center;
+  border-radius: 3px;
+  /* border: 1px solid gray; */
+  padding: 5px;
+}
+.div_header_container .div_legend {
+  width: 22px;
+  height: auto;
+  margin-right: 5px;
+}
+
+.div_header_container .div_divider {
+  width: 1px;
+  background-color: #756f6f;
+  margin: 0 7px;
 }
 
 .div_header_year {

@@ -7,11 +7,7 @@ import Calendar from "./components/Calendar.jsx";
 function App() {
   const [count, setCount] = useState(0);
 
-  return (
-    <div>
-      <Calendar />
-    </div>
-  );
+  return <Calendar />;
 }
 
 export default App;

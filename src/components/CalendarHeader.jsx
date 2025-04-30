@@ -1,6 +1,12 @@
 import React from "react";
 
-function CalendarHeader({ year, month, onPrevMonth, onNextMonth }) {
+function CalendarHeader({
+  year,
+  month,
+  onPrevMonth,
+  onNextMonth,
+  onDateClick,
+}) {
   const monthNames = [
     "1월",
     "2월",
@@ -31,8 +37,12 @@ function CalendarHeader({ year, month, onPrevMonth, onNextMonth }) {
 
       {/* 중앙 날짜 표시 */}
       <div className="div_header_center">
-        <div className="div_header_year">{year}</div>
-        <div className="div_header_month">{monthNames[month]}</div>
+        <div className="div_header_year" onClick={onDateClick}>
+          {year}
+        </div>
+        <div className="div_header_month" onClick={onDateClick}>
+          {monthNames[month]}
+        </div>
       </div>
 
       {/* 오른쪽 버튼 */}
