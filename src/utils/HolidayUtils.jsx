@@ -12,7 +12,7 @@ export async function HolidayUtils(year, apiKey) {
   const response = await fetch(url);
   const data = await response.json();
 
-  // 비공식 기념일
+  // 비공식 공휴일
   const unofficialTitles = [
     "크리스마스 이브",
     "Christmas Eve",
@@ -26,6 +26,7 @@ export async function HolidayUtils(year, apiKey) {
     "섣달 그믐날",
   ];
 
+  //****** 구글캘린더API를 통해 받아온 공휴일 이벤트 목록 중 비공식 공휴일 제외하고 return ******//
   const holidays = data.items
     .filter((event) => {
       return !unofficialTitles.some((title) =>
