@@ -25,3 +25,8 @@ dist-ssr
 
 # 커스텀 ignore
 googleapi.json
+
+# 빌드 아티팩트
+node_modules/
+dist/
+.vite/
