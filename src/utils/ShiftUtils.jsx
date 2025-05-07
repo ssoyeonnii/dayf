@@ -2,9 +2,12 @@
 export async function ShiftUtils(year, month) {
   const shifts = {};
 
-  // 근무 시작일 (기준일)
-  const startDate = new Date(2025, 2, 10); // 2025-03-10 (0-based: 2월이 3월)
-  const endDate = new Date(year, month + 1, 0); // 월 말일까지
+  // 기준 근무 시작일 (패턴 시작 기준점)
+  // 패턴이 시작되는 일자는 2025-02-10
+  // targetdate에 해당하는 근무패턴만 shifts에 저장
+  const patternStartDate = new Date(2025, 2, 10); // 2025-02-10 (0-based)
+  const targetStartDate = new Date(year, month, 1); // 요청된 연/월의 1일
+  const targetEndDate = new Date(year, month + 1, 0); // 요청된 연/월의 마지막 날
 
   const pattern = [
     { type: "주간", workDays: 5, offDays: 2 },
@@ -12,31 +15,30 @@ export async function ShiftUtils(year, month) {
     { type: "오후", workDays: 5, offDays: 1 },
   ];
 
-  let current = new Date(startDate);
+  let current = new Date(patternStartDate);
   let patternIndex = 0;
 
-  while (current <= endDate) {
+  while (current <= targetEndDate) {
     const { type, workDays, offDays } = pattern[patternIndex];
 
-    // 근무일 할당
+    // 근무일
     for (let i = 0; i < workDays; i++) {
-      if (current.getFullYear() === year && current.getMonth() === month) {
+      if (current >= targetStartDate && current <= targetEndDate) {
         const key = formatDate(current);
         shifts[key] = type;
       }
       current.setDate(current.getDate() + 1);
     }
 
-    // 휴무일 할당
+    // 휴무일
     for (let i = 0; i < offDays; i++) {
-      if (current.getFullYear() === year && current.getMonth() === month) {
+      if (current >= targetStartDate && current <= targetEndDate) {
         const key = formatDate(current);
         shifts[key] = "휴무";
       }
       current.setDate(current.getDate() + 1);
     }
 
-    // 다음 근무 유형으로
     patternIndex = (patternIndex + 1) % pattern.length;
   }
 
