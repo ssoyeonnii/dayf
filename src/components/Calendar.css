@@ -84,11 +84,7 @@
   /* background-color: #f0f0f0; */
   font-weight: bold;
   /* min-width: 50px; */
-  width: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-bottom: 2px solid;
+  text-decoration: underline;
 }
 
 .shiftwork_name {
