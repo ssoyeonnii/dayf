@@ -17,12 +17,17 @@ function ShiftCells({ year, month, holidays, shifts }) {
   const dates = []; // 날짜 배열 구성하는 로직 (예: 1~31일)
 
   // 이번 달의 1일 요일
+  // 0: 일요일, 1: 월요일, ..., 6: 토요일
+  // Date(currentYear, currentMonth, 1) : 해당 연/월의 1일
   const firstDay = new Date(currentYear, currentMonth, 1).getDay();
 
   // 이번 달 마지막 날짜
   const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
 
+  // 빈 칸을 포함한 총 날짜 셀 수
   const totalCells = firstDay + lastDate;
+
+  // 6주로 구성된 달인지 확인하는 변수 => 6주(셀 갯수:36개~)일 경우 셀 스타일 조정함
   const isSixRows = totalCells > 35;
 
   // 1일 이전 요일만큼 빈 칸 생성
@@ -42,20 +47,23 @@ function ShiftCells({ year, month, holidays, shifts }) {
       "0"
     )}-${String(day).padStart(2, "0")}`;
     const holiday = holidays.find((h) => h.date === dateStr);
-
     const isToday = formattedToday === dateStr;
 
     const weekDay = new Date(currentYear, currentMonth, day).getDay(); //weekday 0 :일요일 6: 토요일
     let cellClass = "date-cell date";
+
+    //****** 날짜 셀 클래스 설정 : 5주/6주에 따라 셀 크기 적용 ******//
     if (isSixRows) {
       cellClass += " six-weeks";
     } else {
       cellClass += " five-weeks";
     }
+
+    //****** 날짜 셀 클래스 설정 : 일요일 혹은 토요일에 따라 날짜 색상 적용 ******//
     if (weekDay === 0) cellClass += " date_red";
     else if (weekDay === 6) cellClass += " date_gray";
 
-    // 근무 유형별 색상 클래스 추가
+    //****** 날짜 셀 클래스 설정 : 근무 유형별 날짜 셀 background 적용 ******//
     const shift = shifts[dateStr];
     if (shift === "주간") cellClass += " shiftwork_day";
     else if (shift === "야간") cellClass += " shiftwork_night";
@@ -63,10 +71,12 @@ function ShiftCells({ year, month, holidays, shifts }) {
 
     dates.push(
       <div key={day} className={cellClass}>
-        <div className={isToday ? "today-cell" : "date-text"}>
+        <div className="date-text">
           {holiday ? (
             <>
-              <span className="sp_holiday">{day}</span>
+              <span className={`sp_holiday ${isToday ? "today-cell" : ""}`}>
+                {day}
+              </span>
               <div className="text-holiday">
                 {holiday.title.includes("쉬는 날") ? (
                   <>
@@ -80,7 +90,7 @@ function ShiftCells({ year, month, holidays, shifts }) {
               </div>
             </>
           ) : (
-            <span>{day}</span>
+            <span className={isToday ? "today-cell" : ""}>{day}</span>
           )}
         </div>
         <span className="shiftwork_name">
