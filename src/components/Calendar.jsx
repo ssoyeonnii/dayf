@@ -4,9 +4,10 @@ import ShiftCells from "./ShiftCells";
 import { HolidayUtils } from "../utils/HolidayUtils";
 import { ShiftUtils } from "../utils/ShiftUtils";
 import DatePicker from "react-datepicker";
+import SettingModal from "./SettingModal";
 import "react-datepicker/dist/react-datepicker.css";
 
-const API_KEY = "AIzaSyCijUEfTJHi9IV_WrUloBy9eI8iGNk-UXQ"; // 보안상 실제 환경에선 환경변수 처리 필요
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY; // .env.local에 저장된 API_KEY를 가져옴
 
 function Calendar() {
   // 현재 연도/월 상태 관리 => 그래서 datepicker도 header의 상위 컴포넌트에서 관리하는게 맞음
@@ -18,6 +19,17 @@ function Calendar() {
 
   const [holidays, setHolidays] = useState([]);
   const [shifts, setShifts] = useState({});
+
+  //settings 모달창 상태관리 변수
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [shiftConfig, setShiftConfig] = useState({
+    groupCount: 4,
+    pattern: "day-night-off",
+    startDate: new Date(),
+  });
+
+  // 모달창 배경 클릭시 모달창 닫기 위한 ref
+  const modalBackground = useRef();
 
   useEffect(() => {
     const loadHolidaysAndShifts = async () => {
@@ -64,14 +76,53 @@ function Calendar() {
     }
   };
 
+  // 모달용 datepickerRef 추가
+  const modalDatepickerRef = useRef(null);
+
+  const openModalDatePicker = () => {
+    if (modalDatepickerRef.current) {
+      modalDatepickerRef.current.setOpen(true);
+    }
+  };
+
   return (
     <div className="calendar-container">
+      {isSettingsOpen && (
+        <SettingModal
+          ref={modalBackground}
+          onClose={() => setIsSettingsOpen(false)}
+          onSave={(config) => {
+            setShiftConfig(config);
+            // 설정 변경되었으니 shift 계산 다시 하고 싶다면:
+            // loadShifts(config)
+          }}
+          initialConfig={shiftConfig}
+          onDateClick={openModalDatePicker} // 모달용 datepicker 열기
+        />
+      )}
+
+      {/* 모달용 날짜 선택 */}
+      <DatePicker
+        ref={modalDatepickerRef}
+        selected={shiftConfig.startDate}
+        onChange={(selectedDate) => {
+          setShiftConfig((prev) => ({
+            ...prev,
+            startDate: selectedDate,
+          }));
+        }}
+        dateFormat="yyyy-MM-dd"
+        minDate={new Date(2025, 2)}
+        customInput={<div style={{ display: "none" }} />} // 화면에 보이지 않게
+      />
+
       <CalendarHeader
         year={date.year}
         month={date.month}
         onPrevMonth={goToPrevMonth}
         onNextMonth={goToNextMonth}
-        onDateClick={goToDatePicker}
+        onDateClick={goToDatePicker} // 월 변경용 datepicker 열기
+        onSettingsClick={() => setIsSettingsOpen(true)}
       />
 
       {/* 숨겨진 DatePicker popup */}
