@@ -42,12 +42,15 @@ function ShiftCells({ year, month, holidays, shifts }) {
 
   // 1일부터 마지막 날짜까지 날짜 셀 생성
   for (let day = 1; day <= lastDate; day++) {
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(
-      2,
-      "0"
-    )}-${String(day).padStart(2, "0")}`;
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const holiday = holidays.find((h) => h.date === dateStr);
     const isToday = formattedToday === dateStr;
+
+    // console.log('Processing date:', {
+    //   dateStr,
+    //   shift: shifts[dateStr],
+    //   holiday: holiday?.title
+    // });
 
     const weekDay = new Date(currentYear, currentMonth, day).getDay(); //weekday 0 :일요일 6: 토요일
     let cellClass = "date-cell date";
@@ -68,6 +71,7 @@ function ShiftCells({ year, month, holidays, shifts }) {
     if (shift === "주간") cellClass += " shiftwork_day";
     else if (shift === "야간") cellClass += " shiftwork_night";
     else if (shift === "오후") cellClass += " shiftwork_evening";
+    else if (shift === "휴무") cellClass += " shiftwork_off";
 
     dates.push(
       <div key={day} className={cellClass}>
