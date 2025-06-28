@@ -3,10 +3,12 @@ import CalendarHeader from "./CalendarHeader";
 import ShiftCells from "./ShiftCells";
 import { HolidayUtils } from "../utils/HolidayUtils";
 import { ShiftUtils } from "../utils/ShiftUtils";
-import DatePicker from "react-datepicker";
+import DatePicker, { setDefaultLocale } from "react-datepicker";
+import SettingModal from "./SettingModal";
 import "react-datepicker/dist/react-datepicker.css";
+import { supabase } from "./supabaseClient.jsx";
 
-const API_KEY = "AIzaSyCijUEfTJHi9IV_WrUloBy9eI8iGNk-UXQ"; // 보안상 실제 환경에선 환경변수 처리 필요
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY; // .env local에 저장된 API_KEY를 가져옴
 
 function Calendar() {
   // 현재 연도/월 상태 관리 => 그래서 datepicker도 header의 상위 컴포넌트에서 관리하는게 맞음
@@ -19,14 +21,122 @@ function Calendar() {
   const [holidays, setHolidays] = useState([]);
   const [shifts, setShifts] = useState({});
 
+  //사용자설정 없을 경우 기본 default값
+  // defaultConfig는 초기값 역할만 하며, 바뀌지 않기 때문에 usestate사용안함
+  const defaultConfig = {
+    shiftType: "1", 
+    pattern: [
+      { type: "주간", workDays: 0, offDays: 0 },
+      { type: "야간", workDays: 0, offDays: 0 },
+      { type: "오후", workDays: 0, offDays: 0 },
+    ],
+    holidayOffYn: false, // 공휴일 휴무 여부
+    startDate: new Date(),
+    patternStartShift: "" // 시작일자의 근무형태
+  };
+
+  //settings 모달창 상태관리 변수
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  //실제 캘린더에서 사용하는 근무 설정
+  //const [shiftConfig, setShiftConfig] = useState(defaultConfig); // 캘린더 동작 기준
+  const [shiftConfig, setShiftConfig] = useState(null); // 캘린더 동작 기준
+
+  const [userSetConfig, setUserSetConfig] = useState(null); // 사용자가 settinngmodal 에서 입력값 저장
+
+  //로그인 유저 정보 저장
+  const [userName, setUserName] = useState(null);
+  const [userId, setUserId] = useState(null);
+
   useEffect(() => {
+    const name = sessionStorage.getItem("userName");
+    const id = sessionStorage.getItem("userId");
+
+    if (id && name) {
+      setUserName(name);
+      setUserId(id);
+
+      const fetchUserConfig = async () => {
+        const { data, error } = await supabase
+          .from("work_user_shifts")
+          .select("*")
+          .eq("user_id", id)
+          .maybeSingle();
+
+        if (error || !data) {
+          alert("사용자 설정 값을 입력해주세요");
+          console.log("유저 설정이 없거나 불러오기 실패:", error);
+          setIsSettingsOpen(true); // 설정 없으면 모달 열기
+
+          // 기본 설정으로 초기화
+          const defaultConfigWithUser = {
+            ...defaultConfig,
+            userInfo: {
+              userName: name,
+              userId: id,
+            },
+          };
+          //console.log(JSON.stringify(defaultConfigWithUser));
+          setShiftConfig(defaultConfigWithUser);
+          setUserSetConfig(defaultConfigWithUser);
+        } else {
+          // pattern_json이 문자열이면 JSON.parse
+          const parsedPattern =
+            typeof data.pattern_json === "string"
+              ? JSON.parse(data.pattern_json)
+              : data.pattern_json;
+          const configdata = {
+            idx: data.id,
+            shiftType: data.shift_type,
+            pattern:
+              typeof data.pattern === "string"
+                ? JSON.parse(data.pattern)
+                : data.pattern,
+            holidayOffYn: data.holiday_off_yn,
+            startDate: new Date(data.pattern_start_date),
+            patternStartShift: data.pattern_start_shift,
+            userInfo: {
+              userName: name,
+              userId: id,
+            },
+          };
+
+          setShiftConfig(configdata);
+          setUserSetConfig(configdata);
+
+          //console.log(configdata);
+        }
+      };
+
+      fetchUserConfig();
+    }
+  }, []);
+
+
+  useEffect(() => {
+    if (!shiftConfig) return;
+
     const loadHolidaysAndShifts = async () => {
       try {
-        const [holidaysData, shiftsData] = await Promise.all([
-          HolidayUtils(date.year, API_KEY),
-          ShiftUtils(date.year, date.month),
-        ]);
-        //console.log(" API 호출 성공:", holidaysData, shiftsData);
+        let holidaysData = [];
+        let shiftsData = [];
+
+        // Always fetch holidays
+        holidaysData = await HolidayUtils(date.year, API_KEY);
+
+        //공휴일휴무 Y:2일 경우 공휴일 휴무처리를 위해 holidayList 전달
+        if (shiftConfig.holidayOffYn == 2) {
+          const holidayList = holidaysData.map((h) => h.date);
+          shiftsData = await ShiftUtils(
+            date.year,
+            date.month,
+            shiftConfig,
+            holidayList
+          );
+        } else if(shiftConfig.holidayOffYn == 1){
+          //공휴일휴무 N:1일 경우 공휴일 휴무처리하지 않음
+          shiftsData = await ShiftUtils(date.year, date.month, shiftConfig);
+        }
+
         setHolidays(holidaysData);
         setShifts(shiftsData);
       } catch (err) {
@@ -35,7 +145,10 @@ function Calendar() {
     };
 
     loadHolidaysAndShifts();
-  }, [date.year, date.month]); // 연도, 월이 바뀌면
+  }, [date, shiftConfig]);
+
+  // 모달창 배경 클릭시 모달창 닫기 위한 ref
+  const modalBackground = useRef();
 
   // 월 이동 함수
   const goToPrevMonth = () => {
@@ -64,14 +177,72 @@ function Calendar() {
     }
   };
 
+  // 모달용 datepickerRef 추가
+  const modalDatepickerRef = useRef(null);
+
+  const openModalDatePicker = () => {
+    if (modalDatepickerRef.current) {
+      modalDatepickerRef.current.setOpen(true);
+    }
+  };
+
   return (
     <div className="calendar-container">
+      {isSettingsOpen && userSetConfig && (
+        <SettingModal
+          ref={modalBackground}
+          onClose={() => setIsSettingsOpen(false)}
+          onSave={(config) => {
+            // userInfo 추가 및 모든 설정값 포함
+            const configWithUserInfo = {
+              idx: config.id,
+              shiftType: config.shift_type,
+              pattern: config.pattern,
+              holidayOffYn: config.holiday_off_yn,
+              startDate: new Date(config.pattern_start_date),
+              patternStartShift: config.pattern_start_shift,
+              userInfo: {
+                userName: userName,
+                userId: userId
+              }
+            };
+            setShiftConfig(configWithUserInfo);
+            setUserSetConfig(configWithUserInfo);
+          }}
+          initialConfig={userSetConfig}
+          onDateClick={openModalDatePicker}
+        />
+      )}
+
+      {/* 모달용 날짜 선택 */}
+      {isSettingsOpen && (
+        <DatePicker
+          ref={modalDatepickerRef}
+          selected={shiftConfig.startDate}
+          onChange={(selectedDate) => {
+            if (!shiftConfig) return;
+            const parsed = new Date(selectedDate);
+            setShiftConfig((prev) => ({
+              ...prev,
+              startDate: isNaN(parsed.getTime()) ? new Date() : parsed,
+            }));
+          }}
+          dateFormat="yyyy-MM-dd"
+          minDate={new Date(2025, 2)}
+          customInput={<div style={{ display: "none" }} />} // 화면에 보이지 않게
+        />
+      )}
+
       <CalendarHeader
         year={date.year}
         month={date.month}
         onPrevMonth={goToPrevMonth}
         onNextMonth={goToNextMonth}
-        onDateClick={goToDatePicker}
+        onDateClick={goToDatePicker} // 월 변경용 datepicker 열기
+        userId={userId}
+        onSettingsClick={
+          () => setIsSettingsOpen(true) // 모달 열기
+        }
       />
 
       {/* 숨겨진 DatePicker popup */}

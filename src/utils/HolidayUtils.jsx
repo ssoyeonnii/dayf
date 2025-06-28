@@ -10,6 +10,11 @@ export async function HolidayUtils(year, apiKey) {
   )}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
 
   const response = await fetch(url);
+
+  if (!response.ok) {
+  console.error("Google API 요청 실패:", response.status, await response.text());
+  return [];
+}
   const data = await response.json();
 
   // 비공식 공휴일
