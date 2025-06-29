@@ -24,7 +24,7 @@ function Calendar() {
   //사용자설정 없을 경우 기본 default값
   // defaultConfig는 초기값 역할만 하며, 바뀌지 않기 때문에 usestate사용안함
   const defaultConfig = {
-    shiftType: "1", 
+    shiftType: "1",
     pattern: [
       { type: "주간", workDays: 0, offDays: 0 },
       { type: "야간", workDays: 0, offDays: 0 },
@@ -32,7 +32,7 @@ function Calendar() {
     ],
     holidayOffYn: false, // 공휴일 휴무 여부
     startDate: new Date(),
-    patternStartShift: "" // 시작일자의 근무형태
+    patternStartShift: "", // 시작일자의 근무형태
   };
 
   //settings 모달창 상태관리 변수
@@ -111,7 +111,6 @@ function Calendar() {
     }
   }, []);
 
-
   useEffect(() => {
     if (!shiftConfig) return;
 
@@ -132,7 +131,7 @@ function Calendar() {
             shiftConfig,
             holidayList
           );
-        } else if(shiftConfig.holidayOffYn == 1){
+        } else if (shiftConfig.holidayOffYn == 1) {
           //공휴일휴무 N:1일 경우 공휴일 휴무처리하지 않음
           shiftsData = await ShiftUtils(date.year, date.month, shiftConfig);
         }
@@ -192,22 +191,41 @@ function Calendar() {
         <SettingModal
           ref={modalBackground}
           onClose={() => setIsSettingsOpen(false)}
-          onSave={(config) => {
-            // userInfo 추가 및 모든 설정값 포함
-            const configWithUserInfo = {
-              idx: config.id,
-              shiftType: config.shift_type,
-              pattern: config.pattern,
-              holidayOffYn: config.holiday_off_yn,
-              startDate: new Date(config.pattern_start_date),
-              patternStartShift: config.pattern_start_shift,
+          onSave={async () => {
+            // 모달창이 닫히기 전 실행되는 콜백함수
+            //모달창에서 값 저장 후 db에서 shiftconfig값 다시 select하여 변경된 UI 랜더링 
+            const { data, error } = await supabase
+              .from("work_user_shifts")
+              .select("*")
+              .eq("user_id", userId)
+              .maybeSingle();
+
+            if (error || !data) {
+              alert("사용자 설정 값을 저장했으나, 오류가 발생했습니다");
+              return;
+            }
+
+            //pattern이 json이면 파싱, 아니면 배열 그대로 사용
+            const parsedPattern =
+              typeof data.pattern === "string"
+                ? JSON.parse(data.pattern)
+                : data.pattern;
+
+            const configdata = {
+              idx: data.id,
+              shiftType: data.shift_type,
+              pattern: parsedPattern,
+              holidayOffYn: data.holiday_off_yn,
+              startDate: new Date(data.pattern_start_date),
+              patternStartShift: data.pattern_start_shift,
               userInfo: {
-                userName: userName,
-                userId: userId
-              }
+                userName,
+                userId,
+              },
             };
-            setShiftConfig(configWithUserInfo);
-            setUserSetConfig(configWithUserInfo);
+
+            setShiftConfig(configdata);
+            setUserSetConfig(configdata);
           }}
           initialConfig={userSetConfig}
           onDateClick={openModalDatePicker}
