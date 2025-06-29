@@ -36,20 +36,21 @@ function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
   }
 
   // 패턴이 있으면 workdays, offDays값 추출, 없으면 빈 문자열 할당
-  const configIdx = safeConfig.idx;
+  const configIdx = safeConfig.idx ?? null;
+  //null, 0 값일 경우 0으로 출력
   const dayoworkInitial =
-    parsedPattern.find((p) => p.type === "주간")?.workDays || "";
+    parsedPattern.find((p) => p.type === "주간")?.workDays ?? "";
   const nightworkInitial =
-    parsedPattern.find((p) => p.type === "야간")?.workDays || "";
+    parsedPattern.find((p) => p.type === "야간")?.workDays ?? "";
   const eveningworkInitial =
-    parsedPattern.find((p) => p.type === "오후")?.workDays || "";
+    parsedPattern.find((p) => p.type === "오후")?.workDays ?? "";
 
   const dayoffInitial =
-    parsedPattern.find((p) => p.type === "주간")?.offDays || "";
+    parsedPattern.find((p) => p.type === "주간")?.offDays ?? "";
   const nightoffInitial =
-    parsedPattern.find((p) => p.type === "야간")?.offDays || "";
+    parsedPattern.find((p) => p.type === "야간")?.offDays ?? "";
   const eveningoffInitial =
-    parsedPattern.find((p) => p.type === "오후")?.offDays || "";
+    parsedPattern.find((p) => p.type === "오후")?.offDays ?? "";
 
   const [shiftType, setShiftType] = useState(safeConfig.shiftType);
   const [daywork, setDaywork] = useState(dayoworkInitial);
@@ -76,6 +77,21 @@ function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
   const handleSave = async (e) => {
     e.preventDefault(); // 폼 제출 막기
 
+    // 교대근무 형태, 시작일자의 근무형태 값이 선택되어 있지 않을 경우
+    // 4조3교대 : 주간야간오후 근무일 값이 없을 때
+    // 이외 : 주간야간 근무일값이 없을 때
+    if (
+      shiftType == 1 ||
+      patternStartShift == "" ||
+      (shiftType == 4 && (!daywork || !nightwork || !eveningwork)) ||
+      (shiftType !== 4 && (!daywork || !nightwork))
+    ) {
+      alert("사용자 설정 값을 입력해주세요");
+      return;
+    }
+
+    // 4조3교대 : 주간야간오후 휴무일 값이 없을 때
+    // 이외 : 주간야간 휴무일값이 없을 때
     if (
       (shiftType == 4 && (!dayoff || !nightoff || !eveningoff)) ||
       (shiftType !== 4 && (!dayoff || !nightoff))
@@ -110,24 +126,27 @@ function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
 
     // 2. Supabase에 저장할 데이터 객체 구성
     const configToSave = {
-      id: configIdx,
       user_id: userId,
       shift_type: shiftType,
-      pattern: JSON.stringify(pattern), // JSON 필드로 저장
+      pattern: JSON.stringify(pattern),
       holiday_off_yn: holidayOffYn ? 2 : 1,
       pattern_start_date: validDate.toISOString().split("T")[0],
       pattern_start_shift: patternStartShift,
+      ...(configIdx ? { id: configIdx } : {}), 
+      // id는 조건부로만 추가해야함 -> 새로가입한 사용자의 경우 config데이터가 없기 때문
     };
 
     // 3. Supabase insert or update 실행 (configIdx가 있으면 update 없으면 insert)
     let result;
     if (configIdx) {
+      // console.log("codeidx가 없음");
       // configIdx가 있으면 UPDATE
       result = await supabase
         .from("work_user_shifts")
         .update(configToSave)
         .eq("id", configIdx);
     } else {
+      // console.log("codeidx가 없음");
       // configIdx 없으면 INSERT
       result = await supabase.from("work_user_shifts").insert([configToSave]);
     }
@@ -171,95 +190,90 @@ function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
             </select>
           </label>
 
-{/* 근무일 수 + 휴무일 수 한 쌍씩 묶음 */}
-<div className="workoff-container">
+          {/* 근무일 수 + 휴무일 수 한 쌍씩 묶음 */}
+          <div className="workoff-container">
+            <div className="workoff-row">
+              <div className="form-item">
+                <label>주간 근무일 수</label>
+                <input
+                  type="text"
+                  value={daywork}
+                  onChange={(e) => setDaywork(e.target.value)}
+                />
+              </div>
+              <div className="form-item">
+                <label>주간 휴무일</label>
+                <input
+                  type="text"
+                  value={dayoff}
+                  onChange={(e) => setDayoff(e.target.value)}
+                />
+              </div>
+            </div>
 
-  <div className="workoff-row">
-    <div className="form-item">
-      <label>주간 근무일 수</label>
-      <input
-        type="text"
-        value={daywork}
-        onChange={(e) => setDaywork(e.target.value)}
-      />
-    </div>
-    <div className="form-item">
-      <label>주간 휴무일</label>
-      <input
-        type="text"
-        value={dayoff}
-        onChange={(e) => setDayoff(e.target.value)}
-      />
-    </div>
-  </div>
+            <div className="workoff-row">
+              <div className="form-item">
+                <label>야간 근무일 수</label>
+                <input
+                  type="text"
+                  value={nightwork}
+                  onChange={(e) => setNightwork(e.target.value)}
+                />
+              </div>
+              <div className="form-item">
+                <label>야간 휴무일</label>
+                <input
+                  type="text"
+                  value={nightoff}
+                  onChange={(e) => setNightoff(e.target.value)}
+                />
+              </div>
+            </div>
 
-  <div className="workoff-row">
-    <div className="form-item">
-      <label>야간 근무일 수</label>
-      <input
-        type="text"
-        value={nightwork}
-        onChange={(e) => setNightwork(e.target.value)}
-      />
-    </div>
-    <div className="form-item">
-      <label>야간 휴무일</label>
-      <input
-        type="text"
-        value={nightoff}
-        onChange={(e) => setNightoff(e.target.value)}
-      />
-    </div>
-  </div>
-
-  {shiftType == 4 && (
-    <div className="workoff-row">
-      <div className="form-item">
-        <label>오후 근무일 수</label>
-        <input
-          type="text"
-          value={eveningwork}
-          onChange={(e) => setEveningwork(e.target.value)}
-        />
-      </div>
-      <div className="form-item">
-        <label>오후 휴무일</label>
-        <input
-          type="text"
-          value={eveningoff}
-          onChange={(e) => setEveningoff(e.target.value)}
-        />
-      </div>
-    </div>
-  )}
-
-</div>
-
-
+            {shiftType == 4 && (
+              <div className="workoff-row">
+                <div className="form-item">
+                  <label>오후 근무일 수</label>
+                  <input
+                    type="text"
+                    value={eveningwork}
+                    onChange={(e) => setEveningwork(e.target.value)}
+                  />
+                </div>
+                <div className="form-item">
+                  <label>오후 휴무일</label>
+                  <input
+                    type="text"
+                    value={eveningoff}
+                    onChange={(e) => setEveningoff(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="form-row holiday-start-date-row">
-  <label className="form-label">
-    공휴일 휴무 여부
-    <input
-      type="checkbox"
-      checked={holidayOffYn}
-      onChange={(e) => setHolidayOffYn(e.target.checked)}
-      className="form-input-checkbox"
-    />
-  </label>
+            <label className="form-label">
+              공휴일 휴무 여부
+              <input
+                type="checkbox"
+                checked={holidayOffYn}
+                onChange={(e) => setHolidayOffYn(e.target.checked)}
+                className="form-input-checkbox"
+              />
+            </label>
 
-  <label className="form-label">
-    교대근무 시작일자
-    <DatePicker
-      selected={patternStartDate}
-      onChange={(date) => setPatternStartDate(date)}
-      dateFormat="yyyy-MM-dd"
-      minDate={new Date(2025, 2)}
-      className="form-input-datepicker"
-    />
-  </label>
-</div>
-
+            <label className="form-label">
+              교대근무 시작일자
+              <DatePicker
+                selected={patternStartDate}
+                onChange={(date) => setPatternStartDate(date)}
+                dateFormat="yyyy-MM-dd"
+                minDate={new Date(2025, 2)}
+                className="form-input-datepicker"
+              />
+            </label>
+          </div>
 
           {/* 시작일자의 근무형태 - 기존대로 유지 */}
           <label>
@@ -278,10 +292,9 @@ function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
           </label>
 
           <div className="modal_button_group">
-            <button type="submit" className="modal_btn modal_btn_save">
-              {initialConfig && initialConfig.shiftType
-                ? "수정하기"
-                : "저장하기"}
+            <button type="submit" className="modal_btn">
+              {/* 사용자 설정값이 db에 저장되어 있는지 확인하기 위해 idx함께 체크 */}
+              {initialConfig && initialConfig.idx ? "수정하기" : "저장하기"}
             </button>
           </div>
         </form>
