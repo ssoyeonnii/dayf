@@ -27,18 +27,22 @@ function CalendarHeader({
 
   const navigate = useNavigate();
 
+  // 회원가입 페이지
   const moveJoin = () => {
     navigate("/UserJoin");
   };
 
+  // 로그인 페이지
   const moveLogin = () => {
     navigate("/UserLogin");
   };
 
+  // 회원탈퇴 페이지
   const deleteAccount = () => {
     navigate(`/DeleteAccount/${userId}`);
   };
 
+  // 로그아웃
   const userLogout = () => {
     sessionStorage.removeItem("userId");
     sessionStorage.removeItem("userName");

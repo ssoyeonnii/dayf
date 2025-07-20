@@ -4,9 +4,9 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { supabase } from "./supabaseClient.jsx";
 
-function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
-  // 안전한 기본값 보장
-  const safeConfig = {
+function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
+  // 기본 설정 값
+  const defaultConfig = {
     shiftType: initialConfig?.shiftType || "1",
     pattern: Array.isArray(initialConfig?.pattern)
       ? initialConfig.pattern
@@ -25,10 +25,10 @@ function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
   // pattern이 문자열로 들어올 경우를 대비해 항상 배열로 파싱
   let parsedPattern = [];
   try {
-    if (Array.isArray(safeConfig.pattern)) {
-      parsedPattern = safeConfig.pattern;
-    } else if (typeof safeConfig.pattern === "string") {
-      parsedPattern = JSON.parse(safeConfig.pattern);
+    if (Array.isArray(defaultConfig.pattern)) {
+      parsedPattern = defaultConfig.pattern;
+    } else if (typeof defaultConfig.pattern === "string") {
+      parsedPattern = JSON.parse(defaultConfig.pattern);
     }
   } catch (e) {
     console.error("pattern 파싱 오류:", e);
@@ -36,15 +36,16 @@ function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
   }
 
   // 패턴이 있으면 workdays, offDays값 추출, 없으면 빈 문자열 할당
-  const configIdx = safeConfig.idx ?? null;
-  //null, 0 값일 경우 0으로 출력
+  const configIdx = defaultConfig.idx ?? null;
+  //근무일 수
   const dayoworkInitial =
     parsedPattern.find((p) => p.type === "주간")?.workDays ?? "";
   const nightworkInitial =
     parsedPattern.find((p) => p.type === "야간")?.workDays ?? "";
   const eveningworkInitial =
     parsedPattern.find((p) => p.type === "오후")?.workDays ?? "";
-
+  
+   //휴무일 수
   const dayoffInitial =
     parsedPattern.find((p) => p.type === "주간")?.offDays ?? "";
   const nightoffInitial =
@@ -52,27 +53,28 @@ function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
   const eveningoffInitial =
     parsedPattern.find((p) => p.type === "오후")?.offDays ?? "";
 
-  const [shiftType, setShiftType] = useState(safeConfig.shiftType);
-  const [daywork, setDaywork] = useState(dayoworkInitial);
-  const [nightwork, setNightwork] = useState(nightworkInitial);
-  const [eveningwork, setEveningwork] = useState(eveningworkInitial);
-  const [dayoff, setDayoff] = useState(dayoffInitial);
-  const [nightoff, setNightoff] = useState(nightoffInitial);
-  const [eveningoff, setEveningoff] = useState(eveningoffInitial);
+    
+  const [shiftType, setShiftType] = useState(defaultConfig.shiftType); // 교대근무 형태 (4:4조3교대, 3:3조2교대, 2:2조2교대)
+  const [daywork, setDaywork] = useState(dayoworkInitial); // 주간 근무일 수
+  const [nightwork, setNightwork] = useState(nightworkInitial); // 야간 근무일 수
+  const [eveningwork, setEveningwork] = useState(eveningworkInitial); // 오후 근무일 수
+  const [dayoff, setDayoff] = useState(dayoffInitial); // 주간 휴무일 수
+  const [nightoff, setNightoff] = useState(nightoffInitial); // 야간 휴무일 수
+  const [eveningoff, setEveningoff] = useState(eveningoffInitial); // 오후 휴무일 수
   const [holidayOffYn, setHolidayOffYn] = useState(
-    () => safeConfig.holidayOffYn === 2
+    () => defaultConfig.holidayOffYn == 2 // 공휴일 휴무 여부
   );
-  const [patternStartDate, setPatternStartDate] = useState(() => {
-    if (!safeConfig.startDate) return new Date();
-    if (safeConfig.startDate instanceof Date) return safeConfig.startDate;
-    const parsed = new Date(safeConfig.startDate);
+  const [patternStartDate, setPatternStartDate] = useState(() => { //교대근무 시작일자
+    if (!defaultConfig.startDate) return new Date();
+    if (defaultConfig.startDate instanceof Date) return defaultConfig.startDate;
+    const parsed = new Date(defaultConfig.startDate);
     return isNaN(parsed.getTime()) ? new Date() : parsed;
   });
   const [patternStartShift, setPatternStartShift] = useState(
-    safeConfig.patternStartShift
+    defaultConfig.patternStartShift // 교대근무 시작일자의 근무형태
   );
-  const userName = safeConfig.userInfo.userName || "";
-  const userId = safeConfig.userInfo.userId || "";
+  const userName = defaultConfig.userInfo.userName || ""; // 사용자 이름
+  const userId = defaultConfig.userInfo.userId || ""; // 사용자 아이디
 
   const handleSave = async (e) => {
     e.preventDefault(); // 폼 제출 막기
@@ -133,8 +135,8 @@ function SettingModal({ isOpen, onClose, onSave, onDateClick, initialConfig }) {
       pattern_start_date: validDate.toISOString().split("T")[0],
       pattern_start_shift: patternStartShift,
       ...(configIdx ? { id: configIdx } : {}), 
-      // id는 조건부로만 추가해야함 -> 새로가입한 사용자의 경우 config데이터가 없기 때문
-    };
+      // 새로가입한 사용자의 경우 configIdx가 없기 때문에 조건부로만 추가해야함
+    };  
 
     // 3. Supabase insert or update 실행 (configIdx가 있으면 update 없으면 insert)
     let result;

@@ -37,11 +37,9 @@ function Calendar() {
 
   //settings 모달창 상태관리 변수
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  //실제 캘린더에서 사용하는 근무 설정
-  //const [shiftConfig, setShiftConfig] = useState(defaultConfig); // 캘린더 동작 기준
-  const [shiftConfig, setShiftConfig] = useState(null); // 캘린더 동작 기준
+  const [shiftConfig, setShiftConfig] = useState(null); //사용자  설정 값
 
-  const [userSetConfig, setUserSetConfig] = useState(null); // 사용자가 settinngmodal 에서 입력값 저장
+  const [userSetConfig, setUserSetConfig] = useState(null); // 사용자가 settingmodal 에서 입력값
 
   //로그인 유저 정보 저장
   const [userName, setUserName] = useState(null);

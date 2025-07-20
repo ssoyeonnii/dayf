@@ -48,9 +48,18 @@ function DeleteAccount() {
         return;
       }
 
-      //work_user_shift테이블 delete 선행 작업 필요
-      //work_users테이블의 user_id를 참조하는 work_user_shift테이블의 user_id 칼럼이 있음
-      // 3. 탈퇴 처리 
+      // 3. 탈퇴 처리
+      // 3.1. work_user_shift테이블에서 user_id를 참조하는 데이터 삭제
+      const { error: deleteShiftError } = await supabase
+        .from("work_user_shift")
+        .delete()
+        .eq("user_id", userId);
+
+      if (deleteShiftError) {
+        alert("회원 교대 근무 정보 삭제 실패: " + deleteShiftError.message);
+      }
+
+      // 3.2. work_users테이블에서 user 데이터 삭제
       const { error: deleteError } = await supabase
         .from("work_users")
         .delete()
