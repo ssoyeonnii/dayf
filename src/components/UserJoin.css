@@ -1,7 +1,10 @@
 .form-container {
-    min-width: 400px;
+    min-width: 400px;   
     margin: 0 auto;
-    text-align: center; 
+    text-align: center;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
   }
   
   .form-group {
@@ -58,3 +61,8 @@
     margin-top: 6px;
   }
   
+  @media (max-width: 480px) {
+    .form-container {
+      min-width: 300px;
+    }
+  }

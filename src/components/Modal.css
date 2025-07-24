@@ -77,7 +77,6 @@
 .modal_button_group {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
 }
 
 .modal_btn {
@@ -182,4 +181,19 @@
   font-size: 14px;
   width: 100%; /* 가득 채우기 */
   box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 20px 10px;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .form-row label{
+    justify-content: left;
+  }
+  
 }

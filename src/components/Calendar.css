@@ -6,6 +6,7 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .grid-container {
@@ -17,13 +18,15 @@
 .date-cell {
   /* border-bottom: 1px solid #ddd; */
   /* padding: 0.5rem; */
-  width: 100px;
+  width: 100%;
   /* margin-left: 10px; */
   text-align: start;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   justify-content: space-between;
+  min-width: 100px;
+  
 }
 
 .date-cell.empty.five-weeks,
@@ -175,4 +178,12 @@
 }
 .shiftwork_night {
   background-color: rgb(146, 168, 236);
+}
+
+
+@media (max-width: 480px) {
+  .date-cell {
+    max-width: 100px;
+    min-width: 50px;
+  }
 }
