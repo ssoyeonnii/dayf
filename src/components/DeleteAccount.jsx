@@ -51,7 +51,7 @@ function DeleteAccount() {
       // 3. 탈퇴 처리
       // 3.1. work_user_shift테이블에서 user_id를 참조하는 데이터 삭제
       const { error: deleteShiftError } = await supabase
-        .from("work_user_shift")
+        .from("work_user_shifts")
         .delete()
         .eq("user_id", userId);
 
@@ -86,7 +86,8 @@ function DeleteAccount() {
     <div style={styles.container}>
       <h2 style={styles.heading}>회원 탈퇴</h2>
       <p style={styles.warning}>
-        탈퇴 시 계정 정보와 모든 데이터는 영구적으로 삭제되며 복구할 수 없습니다.
+        탈퇴 시 계정 정보와 모든 데이터는<br/>
+        영구적으로 삭제되며 복구할 수 없습니다.
       </p>
 
       <div style={styles.section}>
@@ -125,12 +126,15 @@ export default DeleteAccount;
 
 const styles = {
   container: {
-    maxWidth: "500px",
-    margin: "50px auto",
+    margin: "0px auto",
     padding: "20px",
     border: "1px solid #ddd",
     borderRadius: "8px",
     fontFamily: "sans-serif",
+    minWidth: "300px",  
+    textAlign: "center",
+    width: "100%",
+    boxSizing: "border-box",
   },
   heading: {
     fontSize: "24px",
@@ -145,7 +149,6 @@ const styles = {
     marginBottom: "15px",
   },
   input: {
-    width: "100%",
     padding: "10px",
     marginTop: "5px",
     fontSize: "14px",
