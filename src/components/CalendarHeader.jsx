@@ -7,9 +7,10 @@ function CalendarHeader({
   onPrevMonth,
   onNextMonth,
   onDateClick,
-  userId,
   onSettingsClick,
 }) {
+  const [userId, setUserId] = useState(null);
+  const [userName, setUserName] = useState(null);
   const monthNames = [
     "1월",
     "2월",
@@ -46,13 +47,26 @@ function CalendarHeader({
   const userLogout = () => {
     sessionStorage.removeItem("userId");
     sessionStorage.removeItem("userName");
+    setUserId(null);
+    setUserName(null);
 
     window.location.href = "/";
   };
 
+  // 세션에서 로그인 정보 불러오기
+  useEffect(() => {
+    const storedUserName = sessionStorage.getItem("userName");
+    const storedUserId = sessionStorage.getItem("userId");
+
+    if (storedUserId && storedUserName) {
+      setUserId(storedUserId);
+      setUserName(storedUserName);
+    }
+  }, []);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div className="mb-16" style={{ display: "flex", justifyContent: "space-between" }}>
         {userId && (
           <>
             <button
@@ -78,35 +92,13 @@ function CalendarHeader({
             display: "flex",
             justifyContent: "space-between",
             width: "100%",
+            alignItems: "center",
           }}
         >
-          {userId ? (
-            <>
-              <div>
-                <button onClick={userLogout} style={{
-                backgroundColor: "transparent",
-              }}>로그아웃</button>
+              <div style={{ fontSize: "18px", fontWeight: "600", color: "#1E40AF" }}>
+                {userName}님의 Chillendar
               </div>
-              <div>
-                <button onClick={deleteAccount} style={{
-                backgroundColor: "transparent",
-              }}>회원탈퇴</button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <button onClick={moveLogin} style={{
-                backgroundColor: "transparent",
-              }}>로그인</button>
-              </div>
-              <div>
-                <button onClick={moveJoin} style={{
-                backgroundColor: "transparent",
-              }}>회원가입</button>
-              </div>
-            </>
-          )}
+              
         </div>
       </div>
 

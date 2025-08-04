@@ -11,189 +11,347 @@
   z-index: 999;
 }
 
-.modal-content {
-  background: #fff;
-  padding: 30px 25px;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 520px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  font-size: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+.modal.open {
+  opacity: 1;
+  visibility: visible;
 }
 
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.modal.open .modal-content {
+  transform: translateY(0);
+}
+
+/* 모달 헤더 */
 .modal-header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  position: relative;
-  margin-bottom: 10px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .modal_header_txt {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
 .modal_close {
-  position: absolute;
-  right: 10px;
-  /* top: 50%; */
-  transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 24px;
+  color: #7f8c8d;
   cursor: pointer;
-}
-
-.form-row label,
-.modal-content label {
+  padding: 4px;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  gap: 10px;
-  margin-bottom: 10px;
-  white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
-.modal-content select{
-  flex: 1;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 13px;
+
+/* 근무설정 드롭다운 */
+.work-settings-dropdown {
+  margin: 16px 24px;
 }
 
-/* 공휴일 휴무여부 체크박스 */
-.modal-content input[type="checkbox"] {
-  transform: scale(1.2);
-  margin-left: 10px;
-}
-
-/* modal 버튼 영역 */
-.modal_button_group {
+.work-settings-trigger {
   display: flex;
-  justify-content: center;
-}
-
-.modal_btn {
-  font-size: 14px;
-  padding: 10px 20px;
-  width: 60%;
-  border: none;
-  /* color: white; */
-  border-radius: 5px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+  border: 1px solid #e1e8ed;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-/* datepicker 위치 조정 */
-.react-datepicker-popper {
-  z-index: 1000 !important;
-  top: 10px !important;
-  left: 0 !important;  
+
+.work-settings-trigger.open {
+  border-radius: 12px 12px 0 0;
 }
 
-/* datepicker input */
-.react-datepicker-wrapper input {
-  border: none !important;
-  border-bottom: 1px solid #ccc !important; 
-  padding: 5px 8px;
-  font-size: 14px;
-  width: 100%;
-  box-sizing: border-box;
-  text-align: center;
+.work-settings-trigger span {
+  font-size: 16px;
+  font-weight: 600;
 }
 
-/* modal form */
-.modal-content form {
+.dropdown-arrow {
+  fill: black;
+  transition: transform 0.3s ease;
+}
+
+.dropdown-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.work-settings-content {
+  background: white;
+  border: 1px solid #e1e8ed;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.work-settings-content.open {
+  max-height: 1000px;
+  padding: 24px;
+}
+
+/* 폼 스타일 */
+form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
-.form-row {
+label {
   display: flex;
-  gap: 20px;
-  /* flex-wrap: wrap; */
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+
+select {
+  border-radius : 8px;
+}
+
+select, input[type="text"] {
+  padding: 12px 16px;
+  border: 2px solid #e1e8ed;
+  font-size: 14px;
+  background: white;
+}
+
+
+
+/* 근무일/휴무일 컨테이너 */
+.workoff-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.workoff-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .form-item {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-width: 140px;
 }
 
 .form-item label {
+  margin-bottom: 8px;
   font-size: 13px;
-  margin-bottom: 5px;
-  justify-content: center; 
-  align-items: center; 
+  color: #495057;
+  font-weight: 500;
 }
 
-.form-item input[type="text"]{
-  border: none;
-  border-bottom: 1px solid #ccc;
-  padding: 5px 8px;
-  width: auto;
+.form-item input {
+  padding: 10px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
   font-size: 14px;
-  text-align: center;
+  transition: border-color 0.2s ease;
 }
 
-
-
-/* 근무일수+휴무일 수 묶음 */
-.workoff-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px; /* 줄간격 */
+.form-item input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
-/* 근무형태 별 근무+휴무일 수 row */
-.workoff-row {
-  display: flex;
-  flex-wrap: wrap;
+/* 공휴일/시작일자 행 */
+.form-row.holiday-start-date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
-  justify-content: flex-start;
+  align-items: end;
 }
 
-.workoff-row .form-item {
+.form-label {
   display: flex;
   flex-direction: column;
-  min-width: 130px;
-  flex: 1 1 130px;
+  gap: 8px;
 }
 
-.workoff-row .form-item label {
-  font-size: 13px;
-  margin-bottom: 5px;
-  text-align: left; /* 왼쪽 정렬 */
+.form-input-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #667eea;
+  margin:0 auto;
 }
 
-.workoff-row .form-item input[type="text"] {
-  border: none;
-  border-bottom: 1px solid #ccc;
-  padding: 5px 8px;
+.form-input-datepicker {
+  padding: 12px 16px;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
   font-size: 14px;
-  width: 100%; /* 가득 채우기 */
-  box-sizing: border-box;
+  width: 100%;
+  cursor: pointer;
 }
 
-@media (max-width: 480px) {
+.form-input-datepicker:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 버튼 스타일 */
+.modal_button_group {
+  margin-top: 8px;
+}
+
+.modal_btn {
+  width: 100%;
+  padding: 14px 24px;
+  /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* 계정 관리 버튼들 */
+.modal_account_buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px 24px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 16px;
+}
+
+.modal_btn_logout,
+.modal_btn_delete {
+  flex: 1;
+  padding: 12px 20px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal_btn_logout {
+  background: white;
+  color: #6c757d;
+}
+
+.modal_btn_logout:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.modal_btn_delete {
+  background: white;
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.modal_btn_delete:hover {
+  background: #dc3545;
+  color: white;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 600px) {
   .modal-content {
-    padding: 20px 10px;
-  }
-
-  .form-row {
-    flex-direction: column;
-  }
-
-  .form-row label{
-    justify-content: left;
+    width: 95%;
+    margin: 20px;
   }
   
+  .workoff-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .form-row.holiday-start-date-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .modal_account_buttons {
+    flex-direction: column;
+  }
+  
+  .modal_header_txt {
+    font-size: 18px;
+  }
+}
+
+/* 추가 애니메이션 효과 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.work-settings-content.open {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* 스크롤바 스타일 */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* DatePicker 커스텀 스타일 */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container input {
+  width: 100% !important;
 }
