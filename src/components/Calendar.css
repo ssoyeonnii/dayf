@@ -4,14 +4,15 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
   box-sizing: border-box;
+  padding: 0 10px;
 }
 
 .grid-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -185,5 +186,16 @@
   .date-cell {
     max-width: 100px;
     min-width: 50px;
+  }
+
+
+  .date-cell.empty.five-weeks,
+  .date-cell.date.five-weeks {
+    height: 75px;
+  }
+
+  .date-cell.empty.six-weeks,
+  .date-cell.date.six-weeks {
+    height: 63px;
   }
 }

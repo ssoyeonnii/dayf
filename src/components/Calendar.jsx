@@ -255,7 +255,6 @@ function Calendar() {
         onPrevMonth={goToPrevMonth}
         onNextMonth={goToNextMonth}
         onDateClick={goToDatePicker} // 월 변경용 datepicker 열기
-        userId={userId}
         onSettingsClick={
           () => setIsSettingsOpen(true) // 모달 열기
         }
