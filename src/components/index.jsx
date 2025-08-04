@@ -27,11 +27,11 @@ const index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 pt-70">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50">
       {/* Hero Section */}  
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="fs-48 fw-700 text-gray-900 mb-6">쉼날</h2>
+          <h2 className="fs-48 fw-700 text-gray-900 mb-6">Dayf</h2>
           <p className="fs-20 text-gray-600 mb-8 max-w-3xl mx-auto">
           복잡한 교대근무 패턴도<br/>
 개인 설정만 하면 자동으로 정리!<br/>
@@ -40,13 +40,13 @@ const index = () => {
           <div className="flex justify-center">
             <button
               onClick={moveJoin}
-              className="px-8 py-4 bg-blue-700 text-white fs-18 fw-800 rounded-lg hover:bg-blue-800 transition-colors shadow-lg"
+              className="px-8 py-4 bg-blue-700 mr-16 text-white fs-18 fw-800 rounded-lg hover:bg-blue-800 transition-colors shadow-lg"
             >
               시작하기
             </button>
             <button
               onClick={moveLogin}
-              className="px-8 py-4 bg-blue-700 text-white fs-18 fw-800 rounded-lg hover:bg-blue-800 transition-colors shadow-lg"
+              className="px-8 py-4 fs-18 fw-800 rounded-lg  border-blue-700 text-gray-900 transition-colors shadow-lg"
             >
               로그인
             </button>
@@ -136,7 +136,7 @@ const index = () => {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <p className="text-gray-400">© 2025 교대플래너</p>
+            <p className="text-gray-400">© 2025 Dayf</p>
           </div>
         </div>
       </footer>
