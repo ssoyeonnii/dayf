@@ -7,6 +7,16 @@
   position: relative;
 }
 
+/* 오늘날짜로 이동하는 버튼 */
+.btn_today{
+    border: 1px solid;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-right: 28px;
+}
+
 /* 사용자 정보 영역 */
 .user-info {
   display: flex;
@@ -166,4 +176,8 @@
   .settings-dropdown.open .dropdown-menu {
     transform: translateX(-50%) translateY(0);
   }
+
+   .calendar-container .mg-b-16 {
+      margin-bottom: 16px;
+    }
 } 
