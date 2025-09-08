@@ -8,14 +8,10 @@ function DeleteAccount() {
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
-  const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const deleteUser = async () => {
-    if (!agree) {
-      alert("모든 정보 삭제에 동의해야 탈퇴가 가능합니다.");
-      return;
-    }
+    
 
     if (!password) {
       alert("비밀번호를 입력해주세요.");
@@ -83,84 +79,41 @@ function DeleteAccount() {
   };
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.heading}>회원 탈퇴</h2>
-      <p style={styles.warning}>
+    <div className="form-container text-gray-900">
+      <div className="text-center text-2xl font-bold mg-b-24">회원 탈퇴</div>
+      <p className="text-red-500 fs-18 fw-800 mg-b-24">
         탈퇴 시 계정 정보와 모든 데이터는<br/>
         영구적으로 삭제되며 복구할 수 없습니다.
       </p>
 
-      <div style={styles.section}>
+      <div className="mg-b-16">
         <input
+        autoComplete="off"
           type="password"
-          style={styles.input}
+          style={{borderBottom:"1px solid #000"}}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="비밀번호를 입력하세요"
         />
       </div>
 
-      <div style={styles.section}>
-        <label>
-          <input
-            type="checkbox"
-            checked={agree}
-            onChange={(e) => setAgree(e.target.checked)}
-          />
-          {" "}모든 정보를 삭제하는 데 동의합니다.
-        </label>
+      <div className="mg-t-40 flex justify-center">
+        <button
+          type="button"
+          onClick={deleteUser}
+          disabled={!password.trim()}
+          className={`w-64 fs-15 pd-y-12 text-center rounded-lg font-semibold ${
+           !password.trim()
+              ? "bg-gray-300 text-white"
+              : "bg-red-500 text-white"
+          }`}
+        >
+          회원 탈퇴
+        </button>
       </div>
-
-      <button
-        onClick={deleteUser}
-        disabled={loading}
-        style={styles.button}
-      >
-        {loading ? "처리 중..." : "회원 탈퇴"}
-      </button>
     </div>
   );
 }
 
 export default DeleteAccount;
 
-const styles = {
-  container: {
-    margin: "0px auto",
-    padding: "20px",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    fontFamily: "sans-serif",
-    minWidth: "300px",  
-    textAlign: "center",
-    width: "100%",
-    boxSizing: "border-box",
-  },
-  heading: {
-    fontSize: "24px",
-    marginBottom: "20px",
-  },
-  warning: {
-    color: "#c00",
-    fontWeight: "bold",
-    marginBottom: "20px",
-  },
-  section: {
-    marginBottom: "15px",
-  },
-  input: {
-    padding: "10px",
-    marginTop: "5px",
-    fontSize: "14px",
-  },
-  button: {
-    width: "100%",
-    padding: "12px",
-    backgroundColor: "#c00",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "16px",
-    cursor: "pointer",
-  },
-};
