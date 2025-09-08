@@ -3,8 +3,233 @@ import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import "./index.css";
 
-const index = () => {
+const Index = () => {
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    // 탭 버튼 및 탭 컨텐츠 이벤트 등록
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const tabContents = document.querySelectorAll(".tab-content");
+    const handleTabClick = (button) => () => {
+      const tabId = button.dataset.tab;
+      tabButtons.forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+      tabContents.forEach((content) => {
+        if (content.id === tabId) {
+          content.classList.remove("hidden");
+        } else {
+          content.classList.add("hidden");
+        }
+      });
+    };
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", handleTabClick(button));
+    });
+
+    // 교대근무 차트 관련
+    const shiftData = {
+      "4-3": [
+        "주간",
+        "주간",
+        "야간",
+        "야간",
+        "비번",
+        "비번",
+        "휴무",
+        "휴무",
+        "주간",
+        "주간",
+        "야간",
+        "야간",
+        "비번",
+        "비번",
+        "휴무",
+        "휴무",
+        "주간",
+        "주간",
+        "야간",
+        "야간",
+        "비번",
+        "비번",
+        "휴무",
+        "휴무",
+        "주간",
+        "주간",
+        "야간",
+        "야간",
+        "비번",
+        "비번",
+        "휴무",
+      ],
+      "3-2": [
+        "주간",
+        "주간",
+        "주간",
+        "휴무",
+        "휴무",
+        "야간",
+        "야간",
+        "야간",
+        "비번",
+        "비번",
+        "주간",
+        "주간",
+        "주간",
+        "휴무",
+        "휴무",
+        "야간",
+        "야간",
+        "야간",
+        "비번",
+        "비번",
+        "주간",
+        "주간",
+        "주간",
+        "휴무",
+        "휴무",
+        "야간",
+        "야간",
+        "야간",
+        "비번",
+        "비번",
+        "주간",
+      ],
+      "2-2": [
+        "주간",
+        "주간",
+        "휴무",
+        "휴무",
+        "야간",
+        "야간",
+        "휴무",
+        "휴무",
+        "주간",
+        "주간",
+        "휴무",
+        "휴무",
+        "야간",
+        "야간",
+        "휴무",
+        "휴무",
+        "주간",
+        "주간",
+        "휴무",
+        "휴무",
+        "야간",
+        "야간",
+        "휴무",
+        "휴무",
+        "주간",
+        "주간",
+        "휴무",
+        "휴무",
+        "야간",
+        "야간",
+        "휴무",
+      ],
+    };
+    const shiftColors = {
+      주간: "rgba(253, 224, 71, 0.8)",
+      야간: "rgba(30, 58, 138, 0.8)",
+      오후: "rgba(134, 239, 172, 0.8)",
+      휴무: "rgba(251, 146, 60, 0.8)",
+    };
+    const shiftTextColors = {
+      주간: "#000",
+      야간: "#fff",
+      오후: "#000",
+      휴무: "#000",
+    };
+    let shiftChart;
+    function createChart(pattern) {
+      const ctx = document.getElementById("shiftCalendar").getContext("2d");
+      const labels = Array.from({ length: 31 }, (_, i) => `${i + 1}일`);
+      const data = shiftData[pattern];
+      const backgroundColors = data.map((d) => shiftColors[d]);
+      if (shiftChart) {
+        shiftChart.destroy();
+      }
+      shiftChart = new window.Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "근무 형태",
+              data: Array(31).fill(10),
+              backgroundColor: backgroundColors,
+              borderColor: backgroundColors,
+              borderWidth: 1,
+              barPercentage: 1.0,
+              categoryPercentage: 0.95,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+            datalabels: {
+              anchor: "center",
+              align: "center",
+              color: (context) => shiftTextColors[data[context.dataIndex]],
+              font: { weight: "bold" },
+              formatter: (value, context) => data[context.dataIndex],
+            },
+          },
+          scales: {
+            y: { display: false, max: 10 },
+            x: { grid: { display: false } },
+          },
+        },
+      });
+    }
+    // 교대근무 버튼 이벤트
+    const shiftButtons = document.querySelectorAll(".shift-btn");
+    const handleShiftClick = (button) => () => {
+      const shiftPattern = button.dataset.shift;
+      createChart(shiftPattern);
+      shiftButtons.forEach((btn) => {
+        btn.classList.remove("bg-black", "text-white");
+        btn.classList.add("bg-gray-300", "text-gray-700");
+      });
+      button.classList.add("bg-black", "text-white");
+      button.classList.remove("bg-gray-300", "text-gray-700");
+    };
+    shiftButtons.forEach((button) => {
+      button.addEventListener("click", handleShiftClick(button));
+    });
+    createChart("4-3");
+    // 앵커 스크롤 이벤트
+    const anchorLinks = document.querySelectorAll('a[href^="#"]');
+    const handleAnchorClick = function (e) {
+      e.preventDefault();
+      document
+        .querySelector(this.getAttribute("href"))
+        .scrollIntoView({ behavior: "smooth" });
+    };
+    anchorLinks.forEach((anchor) => {
+      anchor.addEventListener("click", handleAnchorClick);
+    });
+    // cleanup 함수에서 이벤트 해제
+    return () => {
+      tabButtons.forEach((button) => {
+        button.removeEventListener("click", handleTabClick(button));
+      });
+      shiftButtons.forEach((button) => {
+        button.removeEventListener("click", handleShiftClick(button));
+      });
+      anchorLinks.forEach((anchor) => {
+        anchor.removeEventListener("click", handleAnchorClick);
+      });
+      if (shiftChart) {
+        shiftChart.destroy();
+      }
+    };
+  }, []);
 
   // 세션에서 로그인 정보 불러오기
   useEffect(() => {
@@ -12,7 +237,7 @@ const index = () => {
     const userId = sessionStorage.getItem("userId");
 
     if (userId && userName) {
-    // 세션이 있으면 calendar.jsx로 이동
+      // 세션이 있으면 calendar.jsx로 이동
       navigate("/calendar");
     }
   }, [navigate]);
@@ -27,121 +252,542 @@ const index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50">
-      {/* Hero Section */}  
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <h2 className="fs-48 fw-700 text-gray-900 mb-6">Dayf</h2>
-          <p className="fs-20 text-gray-600 mb-8 max-w-3xl mx-auto">
-          복잡한 교대근무 패턴도<br/>
-개인 설정만 하면 자동으로 정리!<br/>
-정확하고 직관적인 근무 일정 캘린더
-          </p>
-          <div className="flex justify-center">
-            <button
-              onClick={moveJoin}
-              className="px-8 py-4 bg-blue-700 mr-16 text-white fs-18 fw-800 rounded-lg hover:bg-blue-800 transition-colors shadow-lg"
+    <>
+      <div className="bg-stone-50 text-gray-800">
+        <header
+          id="home"
+          className="w-full bg-white shadow-sm sticky top-0 z-50"
+        >
+          <nav className="container mx-auto px-6 pd-y-16 flex justify-between items-center">
+            <a href="#home" className="text-2xl font-bold text-blue-600">
+              dayf
+            </a>
+            <div className="hidden md:flex items-center space-x-8">
+              <a href="#problem" className="text-gray-600 hover:text-blue-600">
+                문제점
+              </a>
+              <a href="#solution" className="text-gray-600 hover:text-blue-600">
+                솔루션
+              </a>
+              <a href="#benefits" className="text-gray-600 hover:text-blue-600">
+                기대효과
+              </a>
+            </div>
+            <a
+              href={"/UserLogin"}
+              className="hidden md:block bg-blue-600 text-white pd-x-4 py-2 rounded-lg transition"
             >
-              시작하기
-            </button>
+              서비스 바로가기
+            </a>
             <button
-              onClick={moveLogin}
-              className="px-8 py-4 fs-18 fw-800 rounded-lg  border-blue-700 text-gray-900 transition-colors shadow-lg"
+              id="mobile-menu-button"
+              className="md:hidden text-gray-600"
+              onClick={() => setMobileMenuOpen((open) => !open)}
             >
-              로그인
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16m-7 6h7"
+                ></path>
+              </svg>
             </button>
+          </nav>
+          <div
+            id="mobile-menu"
+            className={
+              (mobileMenuOpen ? "" : "hidden ") + "md:hidden px-6 pb-4"
+            }
+          >
+            <a
+              href="#problem"
+              className="block py-2 text-gray-600 hover:text-blue-600"
+            >
+              문제점
+            </a>
+            <a
+              href="#solution"
+              className="block py-2 text-gray-600 hover:text-blue-600"
+            >
+              솔루션
+            </a>
+            <a
+              href="#benefits"
+              className="block py-2 text-gray-600 hover:text-blue-600"
+            >
+              기대효과
+            </a>
+            <a
+              href={"/UserLogin"}
+              className="block mt-2 bg-blue-600 text-white text-center pd-x-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            >
+              서비스 바로가기
+            </a>
           </div>
-        </div>
-      </section>
+        </header>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h3 className="fs-35 fw-700 text-gray-900 mb-4">주요 기능</h3>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-8 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-              <Settings className="w-16 h-16 text-blue-700 mx-auto mb-4" />
-              <h4 className="fs-20 fw-700 text-gray-900 mb-3">맞춤형 설정</h4>
-              <p className="text-gray-600">다양한 교대시스템 지원</p>
-            </div>
-
-            <div className="text-center p-8 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-              <Calendar className="w-16 h-16 text-blue-700 mx-auto mb-4" />
-              <h4 className="fs-20 fw-700 text-gray-900 mb-3">직관적 달력</h4>
-              <p className="text-gray-600">
-                주간/야간/오후 근무를 <br />
-                한눈에 구분
+        <main>
+          <section class="bg-white">
+            <div class="container mx-auto px-6 pd-y-80 md:py-32 text-center">
+              <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
+                복잡한 교대근무, <br />
+                <span class="text-blue-600">dayf</span>로 스마트하게!
+              </h1>
+              <p class="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-gray-600">
+                단 한 번의 설정으로 <br class="md:hidden" />
+                교대 근무 일정을 자동으로 관리하고, <br />
+                이제 당신의 소중한 '휴일(Day Off)'을 <br class="md:hidden" />
+                온전히 계획하고 즐기세요.
               </p>
-            </div>
-
-            <div className="text-center p-8 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-              <Clock className="w-16 h-16 text-blue-700 mx-auto mb-4" />
-              <h4 className="fs-20 fw-700 text-gray-900 mb-3">자동 계산</h4>
-              <p className="text-gray-600">
-                사용자 설정 후 <br />
-                교대근무 일정 자동 생성 및 공휴일 반영
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h3 className="fs-35 fw-700 text-gray-900 mb-4">사용 방법</h3>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-700 text-white rounded-full flex items-center justify-center fs-24 fw-700 mx-auto mb-4">
-                1
+              <div class="mg-t-40">
+                <a
+                  href="#solution"
+                  class="bg-blue-600 text-white pd-x-8 pd-y-12 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
+                >
+                  주요 기능 살펴보기
+                </a>
               </div>
-              <h4 className="fs-20 fw-700 text-gray-900 mb-3">
-                회원가입 & 로그인
-              </h4>
-              <p className="text-gray-600">간단한 정보로 계정을 생성하세요</p>
             </div>
+          </section>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-700 text-white rounded-full flex items-center justify-center fs-24 fw-700 mx-auto mb-4">
-                2
+          <section id="problem" class="pd-y-80 md:py-28">
+            <div class="container mx-auto px-6">
+              <div class="text-center mg-b-12">
+                <h2 class="text-3xl md:text-4xl font-bold">
+                  당신의 캘린더는 어떤가요?
+                </h2>
+                <p class="mt-4 max-w-768 mx-auto text-gray-600">
+                  불규칙한 스케줄로 일정 관리에 어려움은{" "}
+                  <br class="md:hidden" /> 교대근무자라면 누구나 겪는
+                  문제입니다.
+                </p>
               </div>
-              <h4 className="fs-20 fw-700 text-gray-900 mb-3">교대근무 설정</h4>
-              <p className="text-gray-600">
-                나의 교대 유형과 <br />
-                근무 패턴을 설정하세요
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-700 text-white rounded-full flex items-center justify-center fs-24 fw-700 mx-auto mb-4">
-                3
+              <div class="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+                <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 mb-2">
+                  <div>일</div>
+                  <div>월</div>
+                  <div>화</div>
+                  <div>수</div>
+                  <div>목</div>
+                  <div>금</div>
+                  <div>토</div>
+                </div>
+                <div class="grid grid-cols-7 gap-1 text-sm">
+                  <div class="h-64 border rounded-md p-1 bg-gray-50 text-gray-400">
+                    28
+                  </div>
+                  <div class="h-64 border rounded-md p-1 bg-gray-50 text-gray-400">
+                    29
+                  </div>
+                  <div class="h-64 border rounded-md p-1 bg-gray-50 text-gray-400">
+                    30
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">1</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">2</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">3</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                    <span class="font-bold">4</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1 text-red-600">
+                    <span class="font-bold">5</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">6</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">7</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">8</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">9</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">10</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                    <span class="font-bold">11</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1 text-red-600">
+                    <span class="font-bold">12</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">13</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">14</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">15</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">16</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">17</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                    <span class="font-bold">18</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1 text-red-600">
+                    <span class="font-bold">19</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">20</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">21</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">22</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">23</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                    <span class="font-bold">24</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1 text-red-600">
+                    <span class="font-bold">25</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">26</span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">27</span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">28</span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">29</span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1">
+                    <span class="font-bold">30</span>
+                  </div>
+                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                    <span class="font-bold">31</span>
+                  </div>
+                </div>
               </div>
-              <h4 className="fs-20 fw-700 text-gray-900 mb-3">일정 확인</h4>
-              <p className="text-gray-600">
-                달력에서 교대근무 일정을 <br />
-                한눈에 확인하세요
-              </p>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <p className="text-gray-400">© 2025 Dayf</p>
+          <section id="solution" class="pd-y-80 md:py-28 bg-white">
+            <div class="container mx-auto px-6">
+              <div class="text-center mg-b-12">
+                <h2 class="text-3xl md:text-4xl font-bold">
+                  dayf의 명쾌한 해결책
+                </h2>
+                <p class="mt-4 max-w-768 mx-auto text-gray-600 mb_none">
+                  dayf는 교대근무자에게 필요한 핵심 기능을 담아 직관적이고
+                  편리한 사용자 경험을 제공합니다.
+                  <br />
+                  아래 탭을 클릭하여 dayf가 어떻게 당신의 일상을 바꾸는지
+                  확인해보세요.
+                </p>
+                <p class="mt-4 max-w-768 mx-auto text-gray-600 mb_block">
+                  아래 탭을 클릭하여 dayf가
+                  <br />
+                  어떻게 당신의 일상을 바꾸는지 확인해보세요.
+                </p>
+              </div>
+
+              <div class="max-w-4xl mx-auto">
+                <div class="border-b border-gray-200 mg-b-32">
+                  <nav class="-mb-px flex flex_row space-x-6" aria-label="Tabs">
+                    <button
+                      class="tab-btn active whitespace-nowrap pd-y-16 px-1 border-b-2 font-medium text-sm"
+                      data-tab="tab1"
+                    >
+                      📅 자동 캘린더
+                    </button>
+                    <button
+                      class="tab-btn whitespace-nowrap pd-y-16 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+                      data-tab="tab2"
+                    >
+                      ✨ 간편 설정 & 공유
+                    </button>
+                    <button
+                      class="tab-btn whitespace-nowrap pd-y-16 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+                      data-tab="tab3"
+                    >
+                      🔗 구글 연동
+                    </button>
+                  </nav>
+                </div>
+
+                <div id="tab1" class="tab-content">
+                  <h3 class="text-xl font-semibold mb-2">
+                    다양한 근무 형태, 완벽 지원
+                  </h3>
+                  <p class="text-gray-600 mg-b-24">
+                    아래 버튼을 눌러 근무
+                    형태에 따라 캘린더가 어떻게 자동으로 완성되는지
+                    확인해보세요. 
+                  </p>
+                  <div class="flex justify-center space-x-2 mg-b-24">
+                    <button
+                      class="shift-btn bg-black text-white pd-x-4 py-2 rounded-lg"
+                      data-shift="4-3"
+                    >
+                      4조 3교대
+                    </button>
+                    <button
+                      class="shift-btn bg-gray-300 text-gray-700 pd-x-4 py-2 rounded-lg"
+                      data-shift="3-2"
+                    >
+                      3조 2교대
+                    </button>
+                    <button
+                      class="shift-btn bg-gray-300 text-gray-700 pd-x-4 py-2 rounded-lg"
+                      data-shift="2-2"
+                    >
+                      2조 2교대
+                    </button>
+                  </div>
+                  <div class="p-4 bg-gray-50 rounded-xl border">
+                    <div class="chart-container">
+                      <canvas id="shiftCalendar"></canvas>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="tab2" class="tab-content hidden">
+                  <h3 class="text-xl font-semibold mb-2">
+                    최초 1회 설정, 그리고 간편한 공유
+                  </h3>
+                  <p class="text-gray-600 mg-b-24">
+                    단 한 번의 설정으로 미래의 모든
+                    스케줄이 완성되고, <br/>완성된 캘린더는 링크 하나로 가족과
+                    친구에게 쉽게 공유할 수 있습니다.
+                  </p>
+                  <div class="pd-32 bg-gray-50 rounded-xl border">
+                    <div class="flex flex-col md:flex-row items-center justify-around space-y-6 md:space-y-0 md:space-x-6">
+                      <div class="text-center">
+                        <div class="text-4xl mb-2">⚙️</div>
+                        <h4 class="font-bold">1. 근무조 설정</h4>
+                      </div>
+                      <div class="text-5xl text-gray-300 font-light hidden md:block">
+                        →
+                      </div>
+                      <div class="text-3xl text-gray-300 font-light md:hidden">
+                        ↓
+                      </div>
+                      <div class="text-center">
+                        <div class="text-4xl mb-2">🗓️</div>
+                        <h4 class="font-bold">2. 자동 생성</h4>
+                      </div>
+                      <div class="text-5xl text-gray-300 font-light hidden md:block">
+                        →
+                      </div>
+                      <div class="text-3xl text-gray-300 font-light md:hidden">
+                        ↓
+                      </div>
+                      <div class="text-center">
+                        <div class="text-4xl mb-2">🔗</div>
+                        <h4 class="font-bold">3. 링크 공유</h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="tab3" class="tab-content hidden">
+                  <h3 class="text-xl font-semibold mb-2">
+                    구글 캘린더 연동으로 스마트하게
+                  </h3>
+                  <p class="text-gray-600 mg-b-24">
+                    
+                    구글 캘린더와 연동하여 내 근무 스케줄과 개인 일정, 공휴일까지 한눈에 확인하세요.
+                  </p>
+                  <div class="pd-32 bg-gray-50 rounded-xl border fs-15">
+                    <div class="flex items-center justify-center space-x-4 md:space-x-8">
+                      <div class="text-center">
+                        <div class="p-4 bg-blue-100 rounded-full inline-block">
+                          <span class="text-4xl">🗓️</span>
+                        </div>
+                        <p class="mt-2 font-semibold">dayf 근무표</p>
+                      </div>
+                      <div class="text-4xl text-gray-400 font-light">+</div>
+                      <div class="text-center">
+                        <div class="p-4 bg-green-100 rounded-full inline-block">
+                          <span class="text-4xl">📅</span>
+                        </div>
+                        <p class="mt-2 font-semibold">구글 캘린더</p>
+                      </div>
+                      <div class="text-4xl text-gray-400 font-light">=</div>
+                      <div class="text-center">
+                        <div class="p-4 bg-purple-100 rounded-full inline-block">
+                          <span class="text-4xl">🎉</span>
+                        </div>
+                        <p class="mt-2 font-semibold">완벽한 하루</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="benefits" class="pd-y-80 md:py-28">
+            <div class="container mx-auto px-6">
+              <div class="text-center mg-b-12">
+                <h2 class="text-3xl md:text-4xl font-bold">
+                  dayf가 가져올 <br class="md:hidden" /> 긍정적인 변화
+                </h2>
+                <p class="mt-4 max-w-768 mx-auto text-gray-600">
+                  단순한 스케줄 관리를 넘어, <br class="md:hidden" /> 당신의
+                  삶의 질을 높입니다.
+                </p>
+              </div>
+              <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-32">
+                <div class="bg-white pd-32 rounded-xl shadow-md border border-gray-100 text-center">
+                  <div class="text-4xl mg-b-16">⏱️</div>
+                  <h3 class="text-xl font-bold mb-2">업무 효율성 증대</h3>
+                  <p class="text-gray-600">
+                    복잡한 스케줄 관리 시간을 단축하여 본업에 더욱 집중할 수
+                    있습니다.
+                  </p>
+                </div>
+                <div class="bg-white pd-32 rounded-xl shadow-md border border-gray-100 text-center">
+                  <div class="text-4xl mg-b-16">🏖️</div>
+                  <h3 class="text-xl font-bold mb-2">개인 시간 관리 용이</h3>
+                  <p class="text-gray-600">
+                  교대근무자의 휴무일을 미리 확인하여 개인 약속을 여유롭게 계획 할 수있습니다.
+                  </p>
+                </div>
+                <div class="bg-white pd-32 rounded-xl shadow-md border border-gray-100 text-center">
+                  <div class="text-4xl mg-b-16">👨‍👩‍👧‍👦</div>
+                  <h3 class="text-xl font-bold mb-2">원활한 소통</h3>
+                  <p class="text-gray-600">
+                    가족•친구를 포함한 주변인과 근무•휴무 일정을 쉽게
+                    공유할수 있습니다.
+                  </p>
+                </div>
+                <div class="bg-white pd-32 rounded-xl shadow-md border border-gray-100 text-center">
+                  <div class="text-4xl mg-b-16">🌐</div>
+                  <h3 class="text-xl font-bold mb-2">뛰어난 접근성</h3>
+                  <p class="text-gray-600">
+                  별도 어플리케이션 설치가 필요 없는 웹 링크로 편리하게 이용 가능합니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer class="bg-gray-800 text-white">
+          <div class="container mx-auto px-6 pd-y-48 text-center">
+            <h2 class="text-3xl font-bold">
+              지금 바로 <br class="md:hidden" />
+              당신의 일상을 바꿔보세요.
+            </h2>
+
+            <div class="mt-8">
+              <a
+                href={"/UserJoin"}
+                class="bg-blue-600 text-white pd-x-8 pd-y-12 rounded-lg text-lg font-semibold transition"
+              >
+                서비스 시작하기
+              </a>
+            </div>
+            <p class="mg-t-40 text-gray-400 text-sm">
+              &copy; 2025 dayf. All rights reserved.
+            </p>
           </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </>
   );
 };
 
-export default index;
+export default Index;
