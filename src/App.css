@@ -43,6 +43,30 @@ header {
   }
 }
 
+/*브라우저 다크 모드일 때 스크롤 바 색상 적용*/
+/* Chrome/Safari/Edge (WebKit) */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #ffffff; /* 스크롤바 바탕 흰색 */
+  }
+  ::-webkit-scrollbar-thumb { /* 스크롤바 */
+    background-color: #c9c9c9; 
+    border-radius: 8px;
+    border: 2px solid #ffffff;
+  }
+}
+
+/* Firefox */
+@media (prefers-color-scheme: dark) {
+  html {
+    scrollbar-color: #c9c9c9 #ffffff;
+  }
+}
+
 .card {
   padding: 2em;
 }
