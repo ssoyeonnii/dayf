@@ -26,7 +26,9 @@
   flex-direction: column;
   box-sizing: border-box;
   justify-content: space-between;
-  min-width: 100px;
+  min-width: 0px;
+  border-bottom: 1px solid #9ca3af;
+  padding-bottom:2px;
   
 }
 
@@ -86,7 +88,6 @@
 .today-cell {
   /* border-radius: 50%; */
   /* background-color: #f0f0f0; */
-  font-weight: bold;
   /* min-width: 50px; */
   text-decoration: underline;
 }
@@ -95,11 +96,14 @@
   color: black;
   text-align: center;
   font-size: 12px;
+  width:100%;
+  border-radius: 3px;
 }
 
 .date-text {
   width: 100%;
-  padding-left: 7px;
+  /* padding-left: 10px; */
+  text-align: center;
 }
 
 .div_header_container {
@@ -110,24 +114,25 @@
   justify-content: space-between;
   align-items: center;
   text-align: center;
+  position: relative;
 }
 .div_header_center {
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
   justify-content: center;
   align-items: center;
   text-align: center;
-  width: 60%;
+  /* width: 60%; */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 120px;
 }
 
 .react-datepicker-popper {
   top: -20px !important;
 }
 
-.div_header_year,
-.div_header_month {
-  width: 15%;
-}
 
 .div_header_container .div_legend_container {
   display: flex;
@@ -155,15 +160,10 @@
 
 .btn_prev_month,
 .btn_next_month {
-  background-color: #ffffff;
+  background-color: transparent;
   font-size: 15px;
 }
 
-.btn_prev_month:hover,
-.btn_next_month:hover {
-  background-color: #ffffff;
-  border-color: #f0f0f0;
-}
 
 .btn_prev_month .svg_left,
 .btn_next_month .svg_right {
@@ -171,21 +171,21 @@
   height: 15px;
 }
 
-.shiftwork_day {
+.shiftwork_day .shiftwork_name{
   background-color: bisque;
 }
-.shiftwork_evening {
+.shiftwork_evening .shiftwork_name{
   background-color: rgb(243, 188, 237);
 }
-.shiftwork_night {
+.shiftwork_night .shiftwork_name{
   background-color: rgb(146, 168, 236);
 }
 
 
 @media (max-width: 480px) {
   .date-cell {
-    max-width: 100px;
-    min-width: 50px;
+    max-width: none;
+    min-width: 0;
   }
 
 
@@ -198,4 +198,6 @@
   .date-cell.date.six-weeks {
     height: 63px;
   }
+
+  
 }
