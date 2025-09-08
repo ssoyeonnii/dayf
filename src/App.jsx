@@ -4,6 +4,7 @@ import Test from "./components/Test.jsx";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import UserJoin from "./components/UserJoin"; // 회원가입 페이지
 import UserLogin from "./components/UserLogin"; // 로그인 페이지
+import UserUpdate from "./components/UserUpdate"; // 회원정보수정 페이지
 import DeleteAccount from "./components/DeleteAccount"; // 회원탈퇴 페이지
 import Index from "./components/index";
 
@@ -15,8 +16,8 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/UserJoin" element={<UserJoin />} />
         <Route path="/UserLogin" element={<UserLogin />} />
-       <Route path="/DeleteAccount/:userId" element={<DeleteAccount />} />
-
+        <Route path="/UserUpdate" element={<UserUpdate />} />
+        <Route path="/DeleteAccount/:userId" element={<DeleteAccount />} />
       </Routes>
     </Router>
   );
