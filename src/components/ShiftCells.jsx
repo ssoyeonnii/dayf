@@ -75,17 +75,17 @@ function ShiftCells({ year, month, holidays, shifts }) {
 
     dates.push(
       <div key={day} className={cellClass}>
-        <div className="date-text">
+        <div className="date-text fs-15">
           {holiday ? (
             <>
               <span className={`sp_holiday ${isToday ? "today-cell" : ""}`}>
                 {day}
               </span>
-              <div className="text-holiday">
+              <div className="text-holiday text-red-500">
                 {holiday.title.includes("쉬는 날") ? (
                   <>
-                    {holiday.title.replace("쉬는 날", "").trim()}
-                    <br />
+                    {/* {holiday.title.replace("쉬는 날", "").trim()}
+                    <br /> */}
                     {"대체공휴일"}
                   </>
                 ) : (
@@ -97,9 +97,12 @@ function ShiftCells({ year, month, holidays, shifts }) {
             <span className={isToday ? "today-cell" : ""}>{day}</span>
           )}
         </div>
-        <span className="shiftwork_name">
-          {["주간", "야간", "오후"].includes(shift) ? shift : ""}
-        </span>
+        <div style={{display:"flex",padding:"0px 5px"}}>
+          <span className="shiftwork_name">
+            {["주간", "야간", "오후"].includes(shift) ? shift : ""}
+          </span>
+        </div>
+        
       </div>
     );
   }
@@ -114,7 +117,7 @@ function ShiftCells({ year, month, holidays, shifts }) {
               index === 0 ? "text-red-500" : index === 6 ? "text-gray-500" : ""
             }`}
           >
-            <span className="sp_yoil">{day}</span>
+            <span className="sp_yoil text-center ">{day}</span>
           </div>
         ))}
 
