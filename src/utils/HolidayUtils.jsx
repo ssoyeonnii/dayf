@@ -29,6 +29,7 @@ export async function HolidayUtils(year, apiKey) {
     "스승의날",
     "제헌절",
     "섣달 그믐날",
+    "국군의날",
   ];
 
   //****** 구글캘린더API를 통해 받아온 공휴일 이벤트 목록 중 비공식 공휴일 제외하고 return ******//
