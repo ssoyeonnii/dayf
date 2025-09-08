@@ -47,8 +47,7 @@ function UserLogin() {
   };
 
   return (
-    <div className="form-container">
-      <h2>로그인</h2>
+    <div className="form-container text-gray-900">
       <div className="form-group">
         <label>ID</label>
         <input
@@ -69,9 +68,15 @@ function UserLogin() {
 
       {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
 
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={handleLogin} style={{ width: "100%" }}>로그인</button>
+      <div className="mg-t-24 mg-b-24">
+        
+        <button onClick={handleLogin} class="pd-x-8 pd-y-12 rounded-lg font-semibold transition w-full inline-block border-blue-700 border-2 bg-white">
+          로그인
+          </button>
+
       </div>
+
+      <span class="text-gray-600 fs-15">dayf가 처음이신가요? <a href="/UserJoin">회원가입</a></span>
     </div>
   );
 }
