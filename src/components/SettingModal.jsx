@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 
 function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
   const navigate = useNavigate();
-  const [isWorkSettingsOpen, setIsWorkSettingsOpen] = useState(false);
   // 기본 설정 값
   const defaultConfig = {
     shiftType: initialConfig?.shiftType || "1",
@@ -63,16 +62,21 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
   const [dayoff, setDayoff] = useState(dayoffInitial); // 주간 휴무일 수
   const [nightoff, setNightoff] = useState(nightoffInitial); // 야간 휴무일 수
   const [eveningoff, setEveningoff] = useState(eveningoffInitial); // 오후 휴무일 수
-  const [holidayOffYn, setHolidayOffYn] = useState(
-    () => defaultConfig.holidayOffYn == 2 // 공휴일 휴무 여부
-  );
+  const [holidayOffYn, setHolidayOffYn] = useState(defaultConfig.holidayOffYn);
   const [patternStartDate, setPatternStartDate] = useState(() => {
+     const formatDate = (date) => {
+       if (!(date instanceof Date)) return '';
+       const year = date.getFullYear();
+       const month = String(date.getMonth() + 1).padStart(2, '0');
+       const day = String(date.getDate()).padStart(2, '0');
+       return `${year}-${month}-${day}`;
+     };
     //교대근무 시작일자
-    if (!defaultConfig.startDate) return new Date();
-    if (defaultConfig.startDate instanceof Date) return defaultConfig.startDate;
-    const parsed = new Date(defaultConfig.startDate);
-    return isNaN(parsed.getTime()) ? new Date() : parsed;
-  });
+    if (!defaultConfig.startDate) return formatDate(new Date());
+    if (defaultConfig.startDate instanceof Date) return formatDate(defaultConfig.startDate);
+     const parsed = new Date(defaultConfig.startDate);
+     return isNaN(parsed.getTime()) ? formatDate(new Date()) : formatDate(parsed);
+   });
   const [patternStartShift, setPatternStartShift] = useState(
     defaultConfig.patternStartShift // 교대근무 시작일자의 근무형태
   );
@@ -146,7 +150,7 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
       user_id: userId,
       shift_type: shiftType,
       pattern: JSON.stringify(pattern),
-      holiday_off_yn: holidayOffYn ? 2 : 1,
+      holiday_off_yn: holidayOffYn,
       pattern_start_date: validDate.toISOString().split("T")[0],
       pattern_start_shift: patternStartShift,
       ...(configIdx ? { id: configIdx } : {}),
@@ -186,39 +190,17 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
     <div className={`modal ${isOpen ? "open" : ""}`} onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal_header_txt">마이페이지</div>
-          <button className="modal_close fs-20" onClick={onClose}>
+          <div className="modal_header_txt">{userName}님의 dayf</div>
+          {/* <button className="modal_close fs-20" onClick={onClose}>
             ×
-          </button>
+          </button> */}
         </div>
 
-        {/* 근무설정 드롭다운 */}
-        <div className="work-settings-dropdown">
-          <div
-            className={`work-settings-trigger ${
-              isWorkSettingsOpen ? "open" : ""
-            }`}
-            onClick={() => setIsWorkSettingsOpen(!isWorkSettingsOpen)}
-          >
-            <span>근무설정</span>
-            <svg
-              className={`dropdown-arrow ${
-                isWorkSettingsOpen ? "rotated" : ""
-              }`}
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-            >
-              <path d="M7 10l5 5 5-5z" />
-            </svg>
-          </div>
-          <div
-            className={`work-settings-content  ${
-              isWorkSettingsOpen ? "open" : ""
-            }`}
-          >
+        {/* 근무설정 */}
+        <div className="work-settings">
+          <div className="work-settings-content">
             <form onSubmit={handleSave}>
-              <label>
+              <label for="shiftType" className="form-label">
                 교대근무 형태
                 <select
                   name="shiftType"
@@ -236,17 +218,19 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
               <div className="workoff-container">
                 <div className="workoff-row">
                   <div className="form-item">
-                    <label>주간 근무일 수</label>
+                    <label for="day_work" className="form-label">주간 근무일 수</label>
                     <input
                       type="text"
+                      name="day_work"
                       value={daywork}
                       onChange={(e) => setDaywork(e.target.value)}
                     />
                   </div>
                   <div className="form-item">
-                    <label>주간 휴무일</label>
+                    <label for="day_off" className="form-label">주간 휴무일</label>
                     <input
                       type="text"
+                      name="day_off"
                       value={dayoff}
                       onChange={(e) => setDayoff(e.target.value)}
                     />
@@ -255,17 +239,19 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
 
                 <div className="workoff-row">
                   <div className="form-item">
-                    <label>야간 근무일 수</label>
+                    <label for="night_work" className="form-label">야간 근무일 수</label>
                     <input
                       type="text"
+                      name="night_work"
                       value={nightwork}
                       onChange={(e) => setNightwork(e.target.value)}
                     />
                   </div>
                   <div className="form-item">
-                    <label>야간 휴무일</label>
+                    <label for="night_off" className="form-label">야간 휴무일</label>
                     <input
                       type="text"
+                      name="night_off"
                       value={nightoff}
                       onChange={(e) => setNightoff(e.target.value)}
                     />
@@ -275,17 +261,19 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
                 {shiftType == 4 && (
                   <div className="workoff-row">
                     <div className="form-item">
-                      <label>오후 근무일 수</label>
+                      <label for="evening_work" className="form-label">오후 근무일 수</label>
                       <input
                         type="text"
+                        name="evening_work"
                         value={eveningwork}
                         onChange={(e) => setEveningwork(e.target.value)}
                       />
                     </div>
                     <div className="form-item">
-                      <label>오후 휴무일</label>
+                      <label for="evening_off" className="form-label">오후 휴무일</label>
                       <input
                         type="text"
+                        name="evening_off"
                         value={eveningoff}
                         onChange={(e) => setEveningoff(e.target.value)}
                       />
@@ -294,37 +282,38 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
                 )}
               </div>
 
-              <div className="form-row holiday-start-date-row">
-                <label className="form-label">
+               <label className="form-label">
                   공휴일 휴무 여부
-                  <input
-                    type="checkbox"
-                    checked={holidayOffYn}
-                    onChange={(e) => setHolidayOffYn(e.target.checked)}
-                    className="form-input-checkbox"
-                  />
-                </label>
+                  <select
+                  value={holidayOffYn}
+                  onChange={(e) => setHolidayOffYn(e.target.value)}
+                >
+                  <option value="">선택해주세요</option>
+                  <option value="1">휴무안함</option>
+                  <option value="2">휴무</option>
+                </select>
+  
+              </label>
 
                 <label className="form-label">
                   교대근무 시작일자
-                  <DatePicker
-                    selected={patternStartDate}
-                    onChange={(date) => setPatternStartDate(date)}
-                    dateFormat="yyyy-MM-dd"
-                    minDate={new Date(2025, 2)}
+                  <input type="date"
                     className="form-input-datepicker"
-                  />
+                        value={patternStartDate}
+                         min="2025-03-01"
+                        onChange={(e) => setPatternStartDate(e.target.value)}
+                    
+                    />
                 </label>
-              </div>
 
               {/* 시작일자의 근무형태 - 기존대로 유지 */}
-              <label>
+              <label className="form-label">
                 시작일자의 근무형태
                 <select
                   value={patternStartShift}
                   onChange={(e) => setPatternStartShift(e.target.value)}
                 >
-                  <option value="">선택</option>
+                  <option value="">선택해주세요</option>
                   <option value="day">주간</option>
                   <option value="night">야간</option>
                   {(shiftType == 4 || shiftType === "") && (
@@ -333,32 +322,17 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
                 </select>
               </label>
 
+             
+
+
               <div className="modal_button_group">
-                <button type="submit" className="modal_btn">
+                <button type="submit" className="pd-x-8 rounded-lg transition w-full inline-block border-blue-700 border-1 bg-white">
                   {/* 사용자 설정값이 db에 저장되어 있는지 확인하기 위해 idx함께 체크 */}
                   {initialConfig && initialConfig.idx ? "수정하기" : "저장하기"}
                 </button>
               </div>
             </form>
           </div>
-        </div>
-
-        {/* 사용자 계정 관리 버튼들 */}
-        <div className="modal_account_buttons">
-          <button
-            type="button"
-            className="modal_btn_logout"
-            onClick={handleLogout}
-          >
-            로그아웃
-          </button>
-          <button
-            type="button"
-            className="modal_btn_delete"
-            onClick={handleDeleteAccount}
-          >
-            회원탈퇴
-          </button>
         </div>
       </div>
     </div>
