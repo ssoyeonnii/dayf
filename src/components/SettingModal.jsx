@@ -83,18 +83,7 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
   const userName = defaultConfig.userInfo.userName || ""; // 사용자 이름
   const userId = defaultConfig.userInfo.userId || ""; // 사용자 아이디
 
-  // 로그아웃 함수
-  const handleLogout = () => {
-    sessionStorage.removeItem("userId");
-    sessionStorage.removeItem("userName");
-    window.location.href = "/";
-  };
-
-  // 회원탈퇴 함수
-  const handleDeleteAccount = () => {
-    navigate(`/DeleteAccount/${userId}`);
-  };
-
+  
   const handleSave = async (e) => {
     e.preventDefault(); // 폼 제출 막기
 
@@ -185,6 +174,17 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
     onSave(configToSave);
     onClose(); // 모달 닫기
   };
+
+  //교대근무 시작일자 Min, max date 설정
+  //mindate의 월,일은 1월1일
+  const minDate = new Date();
+  minDate.setFullYear(minDate.getFullYear() - 5);
+  minDate.setMonth(0);
+  minDate.setDate(1);
+  const maxDate = new Date();
+  maxDate.setFullYear(maxDate.getFullYear() + 10);
+  maxDate.setMonth(11);
+  maxDate.setDate(31);
 
   return (
     <div className={`modal ${isOpen ? "open" : ""}`} onClick={onClose}>
@@ -300,7 +300,8 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
                   <input type="date"
                     className="form-input-datepicker"
                         value={patternStartDate}
-                         min="2025-03-01"
+                         min={minDate.toISOString().split("T")[0]}
+                         max={maxDate.toISOString().split("T")[0]}
                         onChange={(e) => setPatternStartDate(e.target.value)}
                     
                     />
