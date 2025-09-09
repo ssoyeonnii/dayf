@@ -278,6 +278,98 @@ input[type='date']::-webkit-calendar-picker-indicator {
  
 }
 
+/* CalDateModal 전용 스타일 */
+.date-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 1;
+  visibility: visible;
+}
+
+.date-modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  transform: translateY(0);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+
+.date-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.date-year-select {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.date-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  transition: all 0.2s ease;
+}
+
+.date-close-btn:hover {
+  background: #f8f9fa;
+}
+
+.date-month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.date-month-btn {
+  background: none;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.date-month-btn:hover {
+  background: #2c3e50;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.date-month-btn.active {
+  background: #2c3e50;
+  color: white;
+  font-weight: 700;
+}
+
+.date-month-btn.active:hover {
+  transform: translateY(-2px);
+}
+
+.date-current-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+}
+
 /* 추가 애니메이션 효과 */
 @keyframes slideIn {
   from {
