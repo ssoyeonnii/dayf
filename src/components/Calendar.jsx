@@ -174,10 +174,12 @@ function Calendar() {
 
   const datepickerRef = useRef(null);
 
-  const goToDatePicker = () => {
-    if (datepickerRef.current) {
-      datepickerRef.current.setOpen(true);
-    }
+  // 날짜 선택 핸들러 (CalDateModal용)
+  const handleDateSelect = (selectedYear, selectedMonth) => {
+    setDate({
+      year: selectedYear,
+      month: selectedMonth
+    });
   };
 
    // 오늘 날짜가 있는 월로 이동하는 함수 추가
@@ -270,7 +272,7 @@ function Calendar() {
         month={date.month}
         onPrevMonth={goToPrevMonth}
         onNextMonth={goToNextMonth}
-        onDateClick={goToDatePicker} // 월 변경용 datepicker 열기
+        onDateSelect={handleDateSelect} // CalDateModal용 핸들러로 변경
         onSettingsClick={
           () => setIsSettingsOpen(true) // 모달 열기
         }

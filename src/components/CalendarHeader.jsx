@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import CalDateModal from "./CalDateModal";
 import "./CalendarHeader.css"; 
 
 function CalendarHeader({
@@ -7,7 +8,7 @@ function CalendarHeader({
   month,
   onPrevMonth,
   onNextMonth,
-  onDateClick,
+  onDateSelect, // 날짜 선택 핸들러로 변경
   onSettingsClick,
   onTodayClick, // 오늘 버튼 클릭 시 호출될 함수
   currentYear, // 오늘 연도
@@ -16,6 +17,7 @@ function CalendarHeader({
 }) {
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState(null);
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
   const monthNames = [
     "1월",
     "2월",
@@ -31,24 +33,6 @@ function CalendarHeader({
     "12월",
   ];
 
-  const navigate = useNavigate();
-
-  // 회원가입 페이지
-  const moveJoin = () => {
-    navigate("/UserJoin");
-  };
-
- 
-  // 회원탈퇴 페이지
-  const deleteAccount = () => {
-    navigate(`/DeleteAccount/${userId}`);
-  };
-
-  // 회원정보 수정 페이지
-  const moveUserUpdate = () => {
-    navigate("/UserUpdate");
-  };
-
  
   // 세션에서 로그인 정보 불러오기
   useEffect(() => {
@@ -60,6 +44,17 @@ function CalendarHeader({
       setUserName(storedUserName);
     }
   }, []);
+
+  // 날짜 모달 열기
+  const handleDateClick = () => {
+    setIsDateModalOpen(true);
+  };
+
+  // 날짜 선택 핸들러
+  const handleDateSelectModal = (selectedYear, selectedMonth) => {
+    onDateSelect(selectedYear, selectedMonth);
+    setIsDateModalOpen(false);
+  };
 
   return (
     <div className="text-gray-900" style={{ display: "flex", flexDirection: "column", width: "100%" }}>
@@ -120,7 +115,7 @@ function CalendarHeader({
           {/* <div className="div_header_year" onClick={onDateClick}>
             {year}
           </div> */}
-          <div className="div_header_month" onClick={onDateClick}>
+          <div className="div_header_month" onClick={handleDateClick}>
             {monthNames[month]}
           </div>
 
@@ -149,6 +144,15 @@ function CalendarHeader({
         </button>
         </div>
       </div>
+
+      {/* CalDateModal 추가 */}
+      <CalDateModal 
+        isOpen={isDateModalOpen}
+        onClose={() => setIsDateModalOpen(false)}
+        onDateSelect={handleDateSelectModal}
+        currentYear={year}
+        currentMonth={month}
+      />
     </div>
   );
 }
