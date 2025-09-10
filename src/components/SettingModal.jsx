@@ -327,7 +327,7 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
 
 
               <div className="modal_button_group">
-                <button type="submit" className="pd-x-8 rounded-lg transition w-full inline-block border-blue-700 border-1 bg-white">
+                <button type="submit" className="rounded-lg transition w-full inline-block border-blue-700 border-1 bg-white pd-y-12" >
                   {/* 사용자 설정값이 db에 저장되어 있는지 확인하기 위해 idx함께 체크 */}
                   {initialConfig && initialConfig.idx ? "수정하기" : "저장하기"}
                 </button>
