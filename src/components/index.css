@@ -257,7 +257,7 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   
-  .gap-32 {
+  .spacing-32 {
     gap: 32px;
   }
   
@@ -391,7 +391,7 @@
       margin-bottom: 32px;
     }
   
-    .gap-32 {
+    .spacing-32 {
       gap: 16px;
     }
   

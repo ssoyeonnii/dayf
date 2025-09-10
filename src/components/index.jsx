@@ -259,7 +259,7 @@ const Index = () => {
           className="w-full bg-white shadow-sm sticky top-0 z-50"
         >
           <nav className="container mx-auto px-6 pd-y-16 flex justify-between items-center">
-            <a href="#home" className="text-2xl font-bold text-blue-600">
+            <a href="/" className="text-2xl font-bold text-blue-600">
               dayf
             </a>
             <div className="hidden md:flex items-center space-x-8">
@@ -380,181 +380,181 @@ const Index = () => {
                   <div>토</div>
                 </div>
                 <div class="grid grid-cols-7 gap-1 text-sm">
-                  <div class="h-64 border rounded-md p-1 bg-gray-50 text-gray-400">
+                  <div class="h-64 border rounded-md bg-gray-50 text-gray-400">
                     28
                   </div>
-                  <div class="h-64 border rounded-md p-1 bg-gray-50 text-gray-400">
+                  <div class="h-64 border rounded-md bg-gray-50 text-gray-400">
                     29
                   </div>
-                  <div class="h-64 border rounded-md p-1 bg-gray-50 text-gray-400">
+                  <div class="h-64 border rounded-md bg-gray-50 text-gray-400">
                     30
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">1</span>
                     <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
                       주간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">2</span>
                     <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
                       주간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">3</span>
                     <span class="block mt-1 text-xs bg-red-200 rounded-sm">
                       휴무
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                  <div class="h-64 border rounded-md text-blue-600">
                     <span class="font-bold">4</span>
                     <span class="block mt-1 text-xs bg-red-200 rounded-sm">
                       휴무
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1 text-red-600">
+                  <div class="h-64 border rounded-md text-red-600">
                     <span class="font-bold">5</span>
                     <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
                       야간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">6</span>
                     <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
                       야간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">7</span>
                     <span class="block mt-1 text-xs bg-green-200 rounded-sm">
                       오후
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">8</span>
                     <span class="block mt-1 text-xs bg-green-200 rounded-sm">
                       오후
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">9</span>
                     <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
                       주간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">10</span>
                     <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
                       주간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                  <div class="h-64 border rounded-md text-blue-600">
                     <span class="font-bold">11</span>
                     <span class="block mt-1 text-xs bg-red-200 rounded-sm">
                       휴무
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1 text-red-600">
+                  <div class="h-64 border rounded-md text-red-600">
                     <span class="font-bold">12</span>
                     <span class="block mt-1 text-xs bg-red-200 rounded-sm">
                       휴무
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">13</span>
                     <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
                       야간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">14</span>
                     <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
                       야간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">15</span>
                     <span class="block mt-1 text-xs bg-green-200 rounded-sm">
                       오후
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">16</span>
                     <span class="block mt-1 text-xs bg-green-200 rounded-sm">
                       오후
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">17</span>
                     <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
                       주간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                  <div class="h-64 border rounded-md text-blue-600">
                     <span class="font-bold">18</span>
                     <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
                       주간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1 text-red-600">
+                  <div class="h-64 border rounded-md text-red-600">
                     <span class="font-bold">19</span>
                     <span class="block mt-1 text-xs bg-red-200 rounded-sm">
                       휴무
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">20</span>
                     <span class="block mt-1 text-xs bg-red-200 rounded-sm">
                       휴무
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">21</span>
                     <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
                       야간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">22</span>
                     <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
                       야간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">23</span>
                     <span class="block mt-1 text-xs bg-green-200 rounded-sm">
                       오후
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                  <div class="h-64 border rounded-md text-blue-600">
                     <span class="font-bold">24</span>
                     <span class="block mt-1 text-xs bg-green-200 rounded-sm">
                       오후
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1 text-red-600">
+                  <div class="h-64 border rounded-md text-red-600">
                     <span class="font-bold">25</span>
                     <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
                       주간
                     </span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">26</span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">27</span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">28</span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">29</span>
                   </div>
-                  <div class="h-64 border rounded-md p-1">
+                  <div class="h-64 border rounded-md ">
                     <span class="font-bold">30</span>
                   </div>
-                  <div class="h-64 border rounded-md p-1 text-blue-600">
+                  <div class="h-64 border rounded-md text-blue-600">
                     <span class="font-bold">31</span>
                   </div>
                 </div>
@@ -589,19 +589,19 @@ const Index = () => {
                       class="tab-btn active whitespace-nowrap pd-y-16 px-1 border-b-2 font-medium text-sm"
                       data-tab="tab1"
                     >
-                      📅 자동 캘린더
+                      자동 캘린더
                     </button>
                     <button
                       class="tab-btn whitespace-nowrap pd-y-16 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
                       data-tab="tab2"
                     >
-                      ✨ 간편 설정 & 공유
+                      간편 설정 & 공유
                     </button>
                     <button
                       class="tab-btn whitespace-nowrap pd-y-16 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
                       data-tab="tab3"
                     >
-                      🔗 구글 연동
+                      구글 연동
                     </button>
                   </nav>
                 </div>
@@ -689,30 +689,7 @@ const Index = () => {
                     
                     구글 캘린더와 연동하여 내 근무 스케줄과 개인 일정, 공휴일까지 한눈에 확인하세요.
                   </p>
-                  <div class="pd-32 bg-gray-50 rounded-xl border fs-15">
-                    <div class="flex items-center justify-center space-x-4 md:space-x-8">
-                      <div class="text-center">
-                        <div class="p-4 bg-blue-100 rounded-full inline-block">
-                          <span class="text-4xl">🗓️</span>
-                        </div>
-                        <p class="mt-2 font-semibold">dayf 근무표</p>
-                      </div>
-                      <div class="text-4xl text-gray-400 font-light">+</div>
-                      <div class="text-center">
-                        <div class="p-4 bg-green-100 rounded-full inline-block">
-                          <span class="text-4xl">📅</span>
-                        </div>
-                        <p class="mt-2 font-semibold">구글 캘린더</p>
-                      </div>
-                      <div class="text-4xl text-gray-400 font-light">=</div>
-                      <div class="text-center">
-                        <div class="p-4 bg-purple-100 rounded-full inline-block">
-                          <span class="text-4xl">🎉</span>
-                        </div>
-                        <p class="mt-2 font-semibold">완벽한 하루</p>
-                      </div>
-                    </div>
-                  </div>
+                 
                 </div>
               </div>
             </div>
@@ -729,7 +706,7 @@ const Index = () => {
                   삶의 질을 높입니다.
                 </p>
               </div>
-              <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-32">
+              <div class="grid md:grid-cols-2 lg:grid-cols-4 spacing-32">
                 <div class="bg-white pd-32 rounded-xl shadow-md border border-gray-100 text-center">
                   <div class="text-4xl mg-b-16">⏱️</div>
                   <h3 class="text-xl font-bold mb-2">업무 효율성 증대</h3>
