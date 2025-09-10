@@ -66,7 +66,7 @@ function UserJoin() {
     // 이름는 영문자 또는 한글만 허용
     const namePattern = /^[A-Za-z가-힣]+$/;
     if (!namePattern.test(username)) {
-      alert("ID는 영문자 또는 한글만 입력할 수 있습니다.");
+      alert("이름은 영문자 또는 한글만 입력할 수 있습니다.");
       return;
     }
 
