@@ -115,8 +115,8 @@ function CalendarHeader({
           {/* <div className="div_header_year" onClick={onDateClick}>
             {year}
           </div> */}
-          <div className="div_header_month" onClick={handleDateClick}>
-            {monthNames[month]}
+          <div className="div_header_month fs-18" onClick={handleDateClick}>
+            {year}.{String(month + 1).padStart(2, '0')}.
           </div>
 
         </div>

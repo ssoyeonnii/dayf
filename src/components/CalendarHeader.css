@@ -8,14 +8,17 @@
 }
 
 /* 오늘날짜로 이동하는 버튼 */
-.btn_today{
-    border: 1px solid;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 12px;
+.btn_today {
+    background-color: #000000;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
-    margin-right: 28px;
+    margin-right: 10px;
 }
+
 
 /* 사용자 정보 영역 */
 .user-info {
@@ -153,6 +156,10 @@
     gap: 16px;
     align-items: stretch;
   }
+
+  .div_header_month.fs-18 {
+    font-size: 16px;
+  }
   
   .user-name {
     font-size: 16px;
@@ -180,4 +187,4 @@
    .calendar-container .mg-b-16 {
       margin-bottom: 16px;
     }
-} 
+}

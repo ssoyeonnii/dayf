@@ -18,7 +18,7 @@
 
 .date-cell {
   /* border-bottom: 1px solid #ddd; */
-  /* padding: 0.5rem; */
+   padding: 3px 0px;
   width: 100%;
   /* margin-left: 10px; */
   text-align: start;
@@ -86,10 +86,13 @@
 }
 
 .today-cell {
-  /* border-radius: 50%; */
-  /* background-color: #f0f0f0; */
-  /* min-width: 50px; */
-  text-decoration: underline;
+  background-color: #000000;
+  color: white;
+  border-radius: 50%;
+  display: inline-block;
+  min-width: 24px;
+  text-align: center;
+  font-weight: bold;
 }
 
 .shiftwork_name {
@@ -129,10 +132,31 @@
   min-width: 120px;
 }
 
-.react-datepicker-popper {
-  top: -20px !important;
+.div_header_month {
+  cursor: pointer;
 }
 
+/* 월 이동 버튼 스타일 */
+.btn_prev_month,
+.btn_next_month {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn_prev_month:hover,
+.btn_next_month:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+  transform: scale(1.05);
+}
 
 .div_header_container .div_legend_container {
   display: flex;
