@@ -281,7 +281,7 @@
   }
   
   /* 높이 */
-  .h-64 {
+  .cell-h-64 {
     height: 64px;
   }
   
@@ -415,6 +415,78 @@
 
       .chart-container {
         height: 230px;
+      }
+
+      /* 교대근무 버튼 모바일 스타일 */
+      .shift-btn {
+        flex: 1;
+        max-width: 120px;
+        padding: 8px 4px;
+        margin: 0;
+      }
+      
+      .shift-btn .text-xl {
+        font-size: 14px;
+      }
+      
+      .shift-btn .text-sm {
+        font-size: 10px;
+      }
+      
+      .shift-btn .text-xs {
+        font-size: 9px;
+      }
+      
+      .shift-btn .flex {
+        flex-direction: column;
+        space-x: 0;
+      }
+
+      /* 근무 스케줄 미리보기 모바일 스타일 */
+      .bg-gradient-to-br.from-gray-50 h4 {
+        font-size: 16px;
+        margin-bottom: 16px;
+      }
+      
+      
+      #shiftLegend {
+        gap: 8px;
+      }
+      
+      #shiftLegend .text-xs {
+        font-size: 10px;
+      }
+
+      /* 탭2, 탭3 모바일 아이콘 영역 스타일 */
+      #tab2 .text-center,
+      #tab3 .text-center {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      #tab2 .text-5xl,
+      #tab3 .text-5xl {
+        font-size: 24px;
+      }
+      
+      #tab2 .p-6,
+      #tab3 .p-6 {
+        padding: 12px;
+      }
+      
+      #tab2 .mt-3,
+      #tab3 .mt-3 {
+        margin-top: 8px;
+        font-size: 11px;
+      }
+      
+      #tab2 .text-2xl,
+      #tab3 .text-2xl {
+        font-size: 16px;
+      }
+
+      .tab-content .pd-32{
+        padding:20px;
       }
 
     #mobile-menu{

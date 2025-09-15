@@ -34,33 +34,33 @@ const Index = () => {
         "주간",
         "야간",
         "야간",
-        "비번",
-        "비번",
         "휴무",
         "휴무",
+        "오후",
+        "오후",
         "주간",
         "주간",
         "야간",
         "야간",
-        "비번",
-        "비번",
         "휴무",
         "휴무",
+        "오후",
+        "오후",
         "주간",
         "주간",
         "야간",
         "야간",
-        "비번",
-        "비번",
         "휴무",
         "휴무",
+        "오후",
+        "오후",
         "주간",
         "주간",
         "야간",
         "야간",
-        "비번",
-        "비번",
         "휴무",
+        "휴무",
+        "오후",
       ],
       "3-2": [
         "주간",
@@ -141,68 +141,6 @@ const Index = () => {
       오후: "#000",
       휴무: "#000",
     };
-    let shiftChart;
-    function createChart(pattern) {
-      const ctx = document.getElementById("shiftCalendar").getContext("2d");
-      const labels = Array.from({ length: 31 }, (_, i) => `${i + 1}일`);
-      const data = shiftData[pattern];
-      const backgroundColors = data.map((d) => shiftColors[d]);
-      if (shiftChart) {
-        shiftChart.destroy();
-      }
-      shiftChart = new window.Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: "근무 형태",
-              data: Array(31).fill(10),
-              backgroundColor: backgroundColors,
-              borderColor: backgroundColors,
-              borderWidth: 1,
-              barPercentage: 1.0,
-              categoryPercentage: 0.95,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { enabled: false },
-            datalabels: {
-              anchor: "center",
-              align: "center",
-              color: (context) => shiftTextColors[data[context.dataIndex]],
-              font: { weight: "bold" },
-              formatter: (value, context) => data[context.dataIndex],
-            },
-          },
-          scales: {
-            y: { display: false, max: 10 },
-            x: { grid: { display: false } },
-          },
-        },
-      });
-    }
-    // 교대근무 버튼 이벤트
-    const shiftButtons = document.querySelectorAll(".shift-btn");
-    const handleShiftClick = (button) => () => {
-      const shiftPattern = button.dataset.shift;
-      createChart(shiftPattern);
-      shiftButtons.forEach((btn) => {
-        btn.classList.remove("bg-black", "text-white");
-        btn.classList.add("bg-gray-300", "text-gray-700");
-      });
-      button.classList.add("bg-black", "text-white");
-      button.classList.remove("bg-gray-300", "text-gray-700");
-    };
-    shiftButtons.forEach((button) => {
-      button.addEventListener("click", handleShiftClick(button));
-    });
-    createChart("4-3");
     // 앵커 스크롤 이벤트
     const anchorLinks = document.querySelectorAll('a[href^="#"]');
     const handleAnchorClick = function (e) {
@@ -219,15 +157,9 @@ const Index = () => {
       tabButtons.forEach((button) => {
         button.removeEventListener("click", handleTabClick(button));
       });
-      shiftButtons.forEach((button) => {
-        button.removeEventListener("click", handleShiftClick(button));
-      });
       anchorLinks.forEach((anchor) => {
         anchor.removeEventListener("click", handleAnchorClick);
       });
-      if (shiftChart) {
-        shiftChart.destroy();
-      }
     };
   }, []);
 
@@ -364,198 +296,40 @@ const Index = () => {
                   당신의 캘린더는 어떤가요?
                 </h2>
                 <p class="mt-4 max-w-768 mx-auto text-gray-600">
-                  불규칙한 스케줄로 일정 관리에 어려움은{" "}
-                  <br class="md:hidden" /> 교대근무자라면 누구나 겪는
-                  문제입니다.
+                복잡하고 불규칙한 교대근무 스케줄로 {" "}
+                <br class="md:hidden" />일정 관리가 어렵지 않나요?
                 </p>
               </div>
-              <div class="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-200">
-                <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 mb-2">
-                  <div>일</div>
-                  <div>월</div>
-                  <div>화</div>
-                  <div>수</div>
-                  <div>목</div>
-                  <div>금</div>
-                  <div>토</div>
-                </div>
-                <div class="grid grid-cols-7 gap-1 text-sm">
-                  <div class="h-64 border rounded-md bg-gray-50 text-gray-400">
-                    28
-                  </div>
-                  <div class="h-64 border rounded-md bg-gray-50 text-gray-400">
-                    29
-                  </div>
-                  <div class="h-64 border rounded-md bg-gray-50 text-gray-400">
-                    30
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">1</span>
-                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
-                      주간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">2</span>
-                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
-                      주간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">3</span>
-                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
-                      휴무
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md text-blue-600">
-                    <span class="font-bold">4</span>
-                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
-                      휴무
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md text-red-600">
-                    <span class="font-bold">5</span>
-                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
-                      야간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">6</span>
-                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
-                      야간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">7</span>
-                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
-                      오후
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">8</span>
-                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
-                      오후
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">9</span>
-                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
-                      주간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">10</span>
-                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
-                      주간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md text-blue-600">
-                    <span class="font-bold">11</span>
-                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
-                      휴무
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md text-red-600">
-                    <span class="font-bold">12</span>
-                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
-                      휴무
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">13</span>
-                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
-                      야간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">14</span>
-                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
-                      야간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">15</span>
-                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
-                      오후
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">16</span>
-                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
-                      오후
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">17</span>
-                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
-                      주간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md text-blue-600">
-                    <span class="font-bold">18</span>
-                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
-                      주간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md text-red-600">
-                    <span class="font-bold">19</span>
-                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
-                      휴무
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">20</span>
-                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
-                      휴무
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">21</span>
-                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
-                      야간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">22</span>
-                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
-                      야간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">23</span>
-                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
-                      오후
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md text-blue-600">
-                    <span class="font-bold">24</span>
-                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
-                      오후
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md text-red-600">
-                    <span class="font-bold">25</span>
-                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
-                      주간
-                    </span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">26</span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">27</span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">28</span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">29</span>
-                  </div>
-                  <div class="h-64 border rounded-md ">
-                    <span class="font-bold">30</span>
-                  </div>
-                  <div class="h-64 border rounded-md text-blue-600">
-                    <span class="font-bold">31</span>
+              <div class="max-w-4xl mx-auto text-center">
+                <div class="bg-gray-50 rounded-2xl p-12 border-2 border-dashed border-gray-300">
+                  <div class="flex flex-col items-center justify-center space-y-8">
+{/* 혼란스러운 시계 아이콘들 */}
+                    <div class="relative">
+                      <div class="text-8xl opacity-30 transform rotate-12">🕐</div>
+                      <div class="text-6xl absolute -top-4 -right-6 opacity-40 transform -rotate-12">🕕</div>
+                      <div class="text-7xl absolute -bottom-2 -left-4 opacity-35 transform rotate-45">🕘</div>
+                      <div class="text-5xl absolute top-2 left-8 opacity-25 transform -rotate-30">🕛</div>
+                    </div>
+                    
+{/* 혼란스러운 메모와 스케줄 */}
+                    <div class="flex flex-wrap justify-center gap-4 max-w-2xl">
+                      <div class="bg-yellow-200 px-4 py-2 rounded-lg transform rotate-3 text-sm font-medium shadow-md">
+                        📝 내일 야간근무?
+                      </div>
+                      <div class="bg-red-200 px-4 py-2 rounded-lg transform -rotate-2 text-sm font-medium shadow-md">
+                        ❓ 언제 휴무지?
+                      </div>
+                      <div class="bg-blue-200 px-4 py-2 rounded-lg transform rotate-1 text-sm font-medium shadow-md">
+                        📱 가족 약속 잡기 어려워
+                      </div>
+                      <div class="bg-green-200 px-4 py-2 rounded-lg transform -rotate-1 text-sm font-medium shadow-md">
+                        🤔 오후 근무였나?
+                      </div>
+                      <div class="bg-purple-200 px-4 py-2 rounded-lg transform rotate-2 text-sm font-medium shadow-md">
+                        📅 스케줄이 헷갈려
+                      </div>
+                    </div>
+                    
                   </div>
                 </div>
               </div>
@@ -568,128 +342,201 @@ const Index = () => {
                 <h2 class="text-3xl md:text-4xl font-bold">
                   dayf의 명쾌한 해결책
                 </h2>
-                <p class="mt-4 max-w-768 mx-auto text-gray-600 mb_none">
-                  dayf는 교대근무자에게 필요한 핵심 기능을 담아 직관적이고
-                  편리한 사용자 경험을 제공합니다.
-                  <br />
-                  아래 탭을 클릭하여 dayf가 어떻게 당신의 일상을 바꾸는지
-                  확인해보세요.
-                </p>
-                <p class="mt-4 max-w-768 mx-auto text-gray-600 mb_block">
-                  아래 탭을 클릭하여 dayf가
-                  <br />
-                  어떻게 당신의 일상을 바꾸는지 확인해보세요.
+                <p class="mt-4 max-w-768 mx-auto text-gray-600">
+                  복잡한 교대근무 스케줄, 이제 dayf로 간단하게! <br/>
+                  구글 캘린더와 연동하여 근무일정과 개인 약속을 한눈에 관리하고, <br/>
+                  가족과 친구들과도 쉽게 일정을 공유하세요.
                 </p>
               </div>
 
-              <div class="max-w-4xl mx-auto">
-                <div class="border-b border-gray-200 mg-b-32">
-                  <nav class="-mb-px flex flex_row space-x-6" aria-label="Tabs">
-                    <button
-                      class="tab-btn active whitespace-nowrap pd-y-16 px-1 border-b-2 font-medium text-sm"
-                      data-tab="tab1"
-                    >
-                      자동 캘린더
-                    </button>
-                    <button
-                      class="tab-btn whitespace-nowrap pd-y-16 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
-                      data-tab="tab2"
-                    >
-                      간편 설정 & 공유
-                    </button>
-                    <button
-                      class="tab-btn whitespace-nowrap pd-y-16 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
-                      data-tab="tab3"
-                    >
-                      구글 연동
-                    </button>
-                  </nav>
+              <div class="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+                <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 mb-2">
+                  <div>일</div>
+                  <div>월</div>
+                  <div>화</div>
+                  <div>수</div>
+                  <div>목</div>
+                  <div>금</div>
+                  <div>토</div>
                 </div>
-
-                <div id="tab1" class="tab-content">
-                  <h3 class="text-xl font-semibold mb-2">
-                    다양한 근무 형태, 완벽 지원
-                  </h3>
-                  <p class="text-gray-600 mg-b-24">
-                    아래 버튼을 눌러 근무
-                    형태에 따라 캘린더가 어떻게 자동으로 완성되는지
-                    확인해보세요. 
-                  </p>
-                  <div class="flex justify-center space-x-2 mg-b-24">
-                    <button
-                      class="shift-btn bg-black text-white pd-x-4 py-2 rounded-lg"
-                      data-shift="4-3"
-                    >
-                      4조 3교대
-                    </button>
-                    <button
-                      class="shift-btn bg-gray-300 text-gray-700 pd-x-4 py-2 rounded-lg"
-                      data-shift="3-2"
-                    >
-                      3조 2교대
-                    </button>
-                    <button
-                      class="shift-btn bg-gray-300 text-gray-700 pd-x-4 py-2 rounded-lg"
-                      data-shift="2-2"
-                    >
-                      2조 2교대
-                    </button>
+                <div class="grid grid-cols-7 gap-1 text-sm">
+                  <div class="cell-h-64 border rounded-md bg-gray-50 text-gray-400">
+                    28
                   </div>
-                  <div class="p-4 bg-gray-50 rounded-xl border">
-                    <div class="chart-container">
-                      <canvas id="shiftCalendar"></canvas>
-                    </div>
+                  <div class="cell-h-64 border rounded-md bg-gray-50 text-gray-400">
+                    29
                   </div>
-                </div>
-
-                <div id="tab2" class="tab-content hidden">
-                  <h3 class="text-xl font-semibold mb-2">
-                    최초 1회 설정, 그리고 간편한 공유
-                  </h3>
-                  <p class="text-gray-600 mg-b-24">
-                    단 한 번의 설정으로 미래의 모든
-                    스케줄이 완성되고, <br/>완성된 캘린더는 링크 하나로 가족과
-                    친구에게 쉽게 공유할 수 있습니다.
-                  </p>
-                  <div class="pd-32 bg-gray-50 rounded-xl border">
-                    <div class="flex flex-col md:flex-row items-center justify-around space-y-6 md:space-y-0 md:space-x-6">
-                      <div class="text-center">
-                        <div class="text-4xl mb-2">⚙️</div>
-                        <h4 class="font-bold">1. 근무조 설정</h4>
-                      </div>
-                      <div class="text-5xl text-gray-300 font-light hidden md:block">
-                        →
-                      </div>
-                      <div class="text-3xl text-gray-300 font-light md:hidden">
-                        ↓
-                      </div>
-                      <div class="text-center">
-                        <div class="text-4xl mb-2">🗓️</div>
-                        <h4 class="font-bold">2. 자동 생성</h4>
-                      </div>
-                      <div class="text-5xl text-gray-300 font-light hidden md:block">
-                        →
-                      </div>
-                      <div class="text-3xl text-gray-300 font-light md:hidden">
-                        ↓
-                      </div>
-                      <div class="text-center">
-                        <div class="text-4xl mb-2">🔗</div>
-                        <h4 class="font-bold">3. 링크 공유</h4>
-                      </div>
-                    </div>
+                  <div class="cell-h-64 border rounded-md bg-gray-50 text-gray-400">
+                    30
                   </div>
-                </div>
-
-                <div id="tab3" class="tab-content hidden">
-                  <h3 class="text-xl font-semibold mb-2">
-                    구글 캘린더 연동으로 스마트하게
-                  </h3>
-                  <p class="text-gray-600 mg-b-24">
-                    
-                    구글 캘린더와 연동하여 내 근무 스케줄과 개인 일정, 공휴일까지 한눈에 확인하세요.
-                  </p>
-                 
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">1</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">2</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">3</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md text-blue-600">
+                    <span class="font-bold">4</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md text-red-600">
+                    <span class="font-bold">5</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">6</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">7</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">8</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">9</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">10</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md text-blue-600">
+                    <span class="font-bold">11</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md text-red-600">
+                    <span class="font-bold">12</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">13</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">14</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">15</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">16</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">17</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md text-blue-600">
+                    <span class="font-bold">18</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md text-red-600">
+                    <span class="font-bold">19</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">20</span>
+                    <span class="block mt-1 text-xs bg-red-200 rounded-sm">
+                      휴무
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">21</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">22</span>
+                    <span class="block mt-1 text-xs bg-blue-900 text-white rounded-sm">
+                      야간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">23</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md text-blue-600">
+                    <span class="font-bold">24</span>
+                    <span class="block mt-1 text-xs bg-green-200 rounded-sm">
+                      오후
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md text-red-600">
+                    <span class="font-bold">25</span>
+                    <span class="block mt-1 text-xs bg-yellow-200 rounded-sm">
+                      주간
+                    </span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">26</span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">27</span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">28</span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">29</span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md ">
+                    <span class="font-bold">30</span>
+                  </div>
+                  <div class="cell-h-64 border rounded-md text-blue-600">
+                    <span class="font-bold">31</span>
+                  </div>
                 </div>
               </div>
             </div>
