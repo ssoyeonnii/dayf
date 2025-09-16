@@ -68,7 +68,7 @@ function UserLogin() {
 
       {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
 
-      <div className="mg-t-24 mg-b-52">
+      <div className="mg-t-24 mg-b-32">
         <button onClick={handleLogin} className="form-action-btn">
           로그인
         </button>
