@@ -147,13 +147,12 @@ function UserJoin() {
         />
       </div>
       <div className="mg-t-24">
-        <a
-          href="#solution"
+        <button
           onClick={handleSignUp}
-          className="pd-x-8 pd-y-12 rounded-lg font-semibold transition w-full inline-block text-gray-900 border-blue-700 border-2 bg-white"
+          className="form-action-btn"
         >
           회원가입
-        </a>
+        </button>
       </div>
     </div>
   );

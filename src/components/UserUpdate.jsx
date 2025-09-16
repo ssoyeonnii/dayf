@@ -117,7 +117,7 @@ function UserUpdate() {
 
   return (
     <div className="form-container text-gray-900">
-      <div className="text-center text-2xl font-bold mg-b-24">회원정보 수정</div>
+      <div className="text-center text-2xl font-bold mg-b-52">회원정보 수정</div>
 
       {!isPasswordVerified ? (
         <>
@@ -137,7 +137,7 @@ function UserUpdate() {
           <div className="mg-t-24">
             <button
               onClick={verifyCurrentPassword}
-              className="pd-x-8 pd-y-12 rounded-lg font-semibold transition w-full text-gray-900 border-blue-700 border-2 bg-white disabled:bg-gray-300"
+              className="form-action-btn"
             >
               확인
             </button>
@@ -193,7 +193,7 @@ function UserUpdate() {
           <div className="mg-t-24">
             <button
               onClick={handleUpdate}
-              className="pd-x-8 pd-y-12 rounded-lg font-semibold transition w-full text-gray-900 border-blue-700 border-2 bg-white disabled:bg-gray-300"
+              className="form-action-btn"
             >
               수정하기
             </button>

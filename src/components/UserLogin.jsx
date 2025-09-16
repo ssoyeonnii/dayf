@@ -68,12 +68,10 @@ function UserLogin() {
 
       {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
 
-      <div className="mg-t-24 mg-b-24">
-        
-        <button onClick={handleLogin} class="pd-x-8 pd-y-12 rounded-lg font-semibold transition w-full inline-block border-blue-700 border-2 bg-white">
+      <div className="mg-t-24 mg-b-52">
+        <button onClick={handleLogin} className="form-action-btn">
           로그인
-          </button>
-
+        </button>
       </div>
 
       <span class="text-gray-600 fs-15">dayf가 처음이신가요? <a href="/UserJoin">회원가입</a></span>

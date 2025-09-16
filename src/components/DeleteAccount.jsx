@@ -80,13 +80,13 @@ function DeleteAccount() {
 
   return (
     <div className="form-container text-gray-900">
-      <div className="text-center text-2xl font-bold mg-b-24">회원 탈퇴</div>
+      <div className="text-center text-2xl font-bold mg-b-52">회원 탈퇴</div>
       <p className="text-red-500 fs-18 fw-800 mg-b-24">
         탈퇴 시 계정 정보와 모든 데이터는<br/>
-        영구적으로 삭제되며 복구할 수 없습니다.
+        영구적으로 삭제되며 복구할 수 없으며, 이에 동의합니다.
       </p>
 
-      <div className="mg-b-16">
+      <div className="form-group">
         <input
         autoComplete="off"
           type="password"
@@ -102,10 +102,10 @@ function DeleteAccount() {
           type="button"
           onClick={deleteUser}
           disabled={!password.trim()}
-          className={`w-64 fs-15 pd-y-12 text-center rounded-lg font-semibold ${
+          className={`user-action-btn danger w-64 fs-15 text-center font-semibold ${
            !password.trim()
-              ? "bg-gray-300 text-white"
-              : "bg-red-500 text-white"
+              ? "disabled"
+              : "active"
           }`}
         >
           회원 탈퇴
