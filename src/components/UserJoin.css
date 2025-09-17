@@ -53,14 +53,18 @@
   }
 
    /* DeleteAccount.jsx 회원탈퇴 페이지 회원탈퇴 버튼*/
+   .user-action-btn.danger{
+    padding: 16px 20px;
+    border-radius: 16px;
+
+   }
  .user-action-btn.danger.active{
    background: #fef2f2;
    color: #dc2626;
    border: 1px solid #fecaca;
    flex: 1;
    justify-content: center;
-   padding: 16px 20px;
-   border-radius: 16px;
+  
    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
  }
 
