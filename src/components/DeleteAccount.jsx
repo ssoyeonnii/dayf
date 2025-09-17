@@ -102,7 +102,7 @@ function DeleteAccount() {
           type="button"
           onClick={deleteUser}
           disabled={!password.trim()}
-          className={`user-action-btn danger w-64 fs-15 text-center font-semibold ${
+          className={`user-action-btn danger ${
            !password.trim()
               ? "disabled"
               : "active"

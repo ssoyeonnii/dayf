@@ -233,11 +233,11 @@ input[type='date']::-webkit-calendar-picker-indicator {
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: all .3s ease;
-  text-align: left;
   width: 100%;
   position: relative;
   overflow: hidden;
+  justify-content: center;
+
 }
 
 
