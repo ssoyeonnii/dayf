@@ -5,7 +5,6 @@ import { HolidayUtils } from "../utils/HolidayUtils";
 import { ShiftUtils } from "../utils/ShiftUtils";
 import DatePicker, { setDefaultLocale } from "react-datepicker";
 import SettingModal from "./SettingModal";
-import UserInfoModal from "./UserInfoModal";
 import "react-datepicker/dist/react-datepicker.css";
 import { supabase } from "./supabaseClient.jsx";
 
@@ -38,7 +37,6 @@ function Calendar() {
   //settings 모달창 상태관리 변수
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [shiftConfig, setShiftConfig] = useState(null); //사용자  설정 값
-  const [isUserInfoOpen, setIsUserInfoOpen] = useState(false); // 사용자 정보 모달 상태
 
   const [userSetConfig, setUserSetConfig] = useState(null); // 사용자가 settingmodal 에서 입력값
 
@@ -279,7 +277,6 @@ function Calendar() {
         onTodayClick={goToToday} // 오늘 버튼 클릭 시 호출될 함수
         currentYear={today.getFullYear()} // 오늘 연도
         currentMonth={today.getMonth()} // 오늘 월
-        onUserInfoClick={() => setIsUserInfoOpen(true)}
       />
 
       {/* 숨겨진 DatePicker popup */}
@@ -305,15 +302,6 @@ function Calendar() {
         shifts={shifts}
       />
 
-      {/* 사용자 정보 모달 */}
-      {isUserInfoOpen && (
-        <UserInfoModal
-          isOpen={isUserInfoOpen}
-          onClose={() => setIsUserInfoOpen(false)}
-          userId={userId}
-          userName={userName}
-        />
-      )}
     </div>
   );
 }

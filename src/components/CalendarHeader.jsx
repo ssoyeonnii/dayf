@@ -13,11 +13,11 @@ function CalendarHeader({
   onTodayClick, // 오늘 버튼 클릭 시 호출될 함수
   currentYear, // 오늘 연도
   currentMonth, // 오늘 월
-  onUserInfoClick,
 }) {
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState(null);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [isUserTooltipOpen, setIsUserTooltipOpen] = useState(false);
   const monthNames = [
     "1월",
     "2월",
@@ -56,6 +56,29 @@ function CalendarHeader({
     setIsDateModalOpen(false);
   };
 
+  // 사용자 툴팁 핸들러
+  const handleUserTooltipToggle = () => {
+    setIsUserTooltipOpen(!isUserTooltipOpen);
+  };
+
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("userId");
+    sessionStorage.removeItem("userName");
+    window.location.href = "/";
+  };
+
+  const handleUserUpdate = () => {
+    navigate("/UserUpdate");
+    setIsUserTooltipOpen(false);
+  };
+
+  const handleDeleteAccount = () => {
+    navigate(`/DeleteAccount/${userId}`);
+    setIsUserTooltipOpen(false);
+  };
+
   return (
     <div className="text-gray-900" style={{ display: "flex", flexDirection: "column", width: "100%" }}>
       <div
@@ -83,17 +106,60 @@ function CalendarHeader({
               </svg>
             </button>
             {/* 회원정보버튼 */}
-            <button
-              onClick={onUserInfoClick}
-              style={{
-                backgroundColor: "transparent",
-                width: "fit-content",
-              }}
-            >
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"  width="25px">
-             <path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/>
-             </svg>
-            </button>
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={handleUserTooltipToggle}
+                style={{
+                  backgroundColor: "transparent",
+                  width: "fit-content",
+                }}
+              >
+               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"  width="25px">
+               <path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/>
+               </svg>
+              </button>
+
+              {/* 툴팁 메뉴 */}
+              {isUserTooltipOpen && (
+                <div className="user-tooltip">
+                  <div className="user-tooltip-header">
+                    <span className="user-tooltip-name">{userName}님</span>
+                  </div>
+                  <div className="user-tooltip-actions">
+                    <button 
+                      className="user-tooltip-btn primary" 
+                      onClick={handleUserUpdate}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" 
+                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      회원정보 수정
+                    </button>
+                    <button 
+                      className="user-tooltip-btn secondary" 
+                      onClick={handleLogout}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" 
+                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      로그아웃
+                    </button>
+                    <button 
+                      className="user-tooltip-btn danger" 
+                      onClick={handleDeleteAccount}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6" 
+                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      회원 탈퇴
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
