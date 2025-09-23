@@ -3,6 +3,7 @@ import { supabase } from "./supabaseClient.jsx";
 import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
 import "./UserJoin.css";
+import GoogleLoginButton from "./GoogleLoginButton.jsx";
 
 function UserLogin() {
   const [userid, setUserid] = useState("");
@@ -39,6 +40,7 @@ function UserLogin() {
       // sessionStorage에 저장
       sessionStorage.setItem("userName", data.user_name);
       sessionStorage.setItem("userId", data.user_id);
+      sessionStorage.setItem("googleuser", "0"); //구글유저가 아님
               
       navigate("/"); //calendar.jsx로 이동
     } else {
@@ -74,7 +76,11 @@ function UserLogin() {
         </button>
       </div>
 
-      <span class="text-gray-600 fs-15">dayf가 처음이신가요? <a href="/UserJoin">회원가입</a></span>
+      <div className="mg-t-24 mg-b-24">
+        <GoogleLoginButton />
+      </div>
+
+      <span className="text-gray-600 fs-15">dayf가 처음이신가요? <a href="/UserJoin">회원가입</a></span>
     </div>
   );
 }

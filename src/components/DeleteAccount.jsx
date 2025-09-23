@@ -9,12 +9,22 @@ function DeleteAccount() {
 
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  //Session googleuser 값 확인
+  const googleuser = sessionStorage.getItem("googleuser");
+  const [agreemsg, setAgreemsg] = useState(""); //사용자가 입력하는 탈퇴 동의 메세지
+  const isGoogleUser = googleuser == "1"; //1 : true, 0 : false
+  const canSubmit = isGoogleUser ? agreemsg.trim() === "동의합니다" : !!password.trim();
+  //구글 유저면 탈퇴 동의 메세지 입력해야 탈퇴버튼 활성화, 구글 유저가 아닐 경우 비밀번호 입력 시 활성화
 
   const deleteUser = async () => {
     
-
-    if (!password) {
+    if (!password && googleuser == "0") {
       alert("비밀번호를 입력해주세요.");
+      return;
+    }
+
+    if ((!agreemsg && googleuser == "1") || (googleuser == "1" && agreemsg !== "동의합니다")) {
+      alert("동의합니다를 입력해주세요.");
       return;
     }
 
@@ -34,16 +44,18 @@ function DeleteAccount() {
         alert("사용자 정보를 불러오는 데 실패했습니다.");
         return;
       }
-      const hashedPassword = data.user_pw;
 
-      // 2. 입력한 비밀번호와 DB 해시값 비교
-      const isMatch = await bcrypt.compare(password, hashedPassword);
+      if (googleuser == "0") {
+        const hashedPassword = data.user_pw;
 
-      if (!isMatch) {
-        alert("비밀번호가 일치하지 않습니다.");
-        return;
+        // 2. 입력한 비밀번호와 DB 해시값 비교
+        const isMatch = await bcrypt.compare(password, hashedPassword);
+
+        if (!isMatch) {
+          alert("비밀번호가 일치하지 않습니다.");
+          return;
+        }
       }
-
       // 3. 탈퇴 처리
       // 3.1. work_user_shift테이블에서 user_id를 참조하는 데이터 삭제
       const { error: deleteShiftError } = await supabase
@@ -86,6 +98,8 @@ function DeleteAccount() {
         영구적으로 삭제되며 복구할 수 없으며, 이에 동의합니다.
       </p>
 
+      {/* 구글유저가 아닐 경우 비밀번호 입력 */}
+      {googleuser == "0" && (
       <div className="form-group">
         <input
         autoComplete="off"
@@ -97,16 +111,30 @@ function DeleteAccount() {
         />
       </div>
 
+      )}
+
+      {/* 구글 유저인 경우 동의합니다 입력 */}
+      {googleuser == "1" && (
+      <div className="form-group">
+        <input
+        autoComplete="off"
+          type="text"
+          name="agreemsg"
+          value={agreemsg}
+          style={{borderBottom:"1px solid #000"}}
+          onChange={(e) => setAgreemsg(e.target.value)}
+          placeholder="동의합니다"
+        />
+      </div>
+
+      )}
+
       <div className="mg-t-40 flex justify-center">
         <button
           type="button"
           onClick={deleteUser}
-          disabled={!password.trim()}
-          className={`user-action-btn danger ${
-           !password.trim()
-              ? "disabled"
-              : "active"
-          }`}
+          disabled={!canSubmit}
+          className={`user-action-btn danger ${canSubmit ? "active" : "disabled"}`}
         >
           회원 탈퇴
         </button>
