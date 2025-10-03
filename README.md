@@ -20,3 +20,5 @@
 - Database : Supabase
 - API : Google Calendar API
 - Deployment : AWS S3, CloudFront
+
+issu 연동 테스트 커밋
