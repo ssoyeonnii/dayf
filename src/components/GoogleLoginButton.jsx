@@ -7,6 +7,9 @@ const GoogleLoginButton = () => {
 
   const loginWithGoogle = useGoogleLogin({
     flow: 'auth-code',
+    scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
+    prompt: 'consent',
+    overrideScope:true,
     onSuccess: async ({ code }) => {
       try {
         //구글에서 받아온 토큰을 백엔드 서버로 전달
@@ -44,7 +47,7 @@ const GoogleLoginButton = () => {
 
   return (
     <>
-      <button onClick={() => loginWithGoogle()} className="form-action-btn" style={{ width: "100%" }}>
+      <button onClick={() => { sessionStorage.removeItem('access_token'); loginWithGoogle(); }} className="form-action-btn" style={{ width: "100%" }}>
         Google로 계속하기
       </button>
     </>

@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' }); //.env 절대 경로 지정
 
 //초기화 미들웨어
 const app = express(); //express app 인스턴스 생성
