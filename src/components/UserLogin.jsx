@@ -31,7 +31,13 @@ function UserLogin() {
       return;
     }
 
-    // 2. 비밀번호 비교
+    // 2. Google 소셜 로그인 계정인지 확인
+    if (data.google_sub && !data.user_pw) {
+      setErrorMsg("Google 계정으로 가입하셨습니다. 'Google로 계속하기' 버튼을 이용해주세요.");
+      return;
+    }
+
+    // 3. 비밀번호 비교
     const isPasswordCorrect = await bcrypt.compare(userpw, data.user_pw);
 
     if (isPasswordCorrect) {
@@ -41,7 +47,7 @@ function UserLogin() {
       sessionStorage.setItem("userName", data.user_name);
       sessionStorage.setItem("userId", data.user_id);
       sessionStorage.setItem("googleuser", "0"); //구글유저가 아님
-              
+      sessionStorage.setItem("google_email", data.google_email);
       navigate("/"); //calendar.jsx로 이동
     } else {
       setErrorMsg("비밀번호가 일치하지 않습니다.");

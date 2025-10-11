@@ -1,38 +1,50 @@
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
+import GoogleAccountManage from "../services/googleAuthService.jsx";
 
 const GoogleLoginButton = () => {
   const navigate = useNavigate();
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const loginWithGoogle = useGoogleLogin({
-    flow: 'auth-code',
+    flow: 'implicit', // token flow
     scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
     prompt: 'consent',
     overrideScope:true,
-    onSuccess: async ({ code }) => {
+    onSuccess: async ({ access_token }) => {
       try {
-        //구글에서 받아온 토큰을 백엔드 서버로 전달
-        const res = await fetch(`${import.meta.env.VITE_API_BASE}/oauth/google/exchange`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ code }),
-        });
-        if (!res.ok) {
-          console.error('Token exchange failed', await res.text());
+        if (!access_token) {
+          alert('Google 액세스 토큰을 받지 못했습니다. 다시 시도해주세요.');
           return;
         }
-        const { user, access_token } = await res.json();
 
+        // Google userinfo + DB upsert (frontend)
+        const result = await GoogleAccountManage.signInWithGoogle(access_token);
+        if (result?.error) {
+          if (result.error === 'DAYF_ACCOUNT_EXISTS') {
+            alert('해당 이메일로 이미 Dayf 계정이 존재합니다.\n일반 로그인을 이용해주세요.');
+          } else if (result.error === 'ALREADY_LINKED') {
+            alert('해당 Google 계정은 이미 다른 Dayf 계정에 연동되어 있습니다.');
+          } else {
+            alert(result.message || '로그인 중 알 수 없는 오류가 발생했습니다.');
+          }
+          return;
+        }
+
+        const { user } = result;
         sessionStorage.setItem('userName', user?.name || 'GoogleUser');
         sessionStorage.setItem('userId', user?.email || '');
-        if (access_token) sessionStorage.setItem('access_token', access_token); //access_token: google 연동 상태 구별
+        sessionStorage.setItem('googleuser', "1");
+        sessionStorage.setItem('access_token', access_token);
 
         alert(`${user?.name || '사용자'}님 환영합니다!`);
         navigate('/');
       } catch (e) {
-        console.error('Auth code flow processing failed', e);
+        console.error('Google token flow failed', e);
+        alert('Google 로그인 중 오류가 발생했습니다.');
+        try {
+          await GoogleAccountManage.saveErrorLog('GoogleLoginButton', 'EXCEPTION', e.message, null);
+        } catch {}
       }
     },
     onError: () => {

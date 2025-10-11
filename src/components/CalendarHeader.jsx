@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
+import GoogleAccountManage from "../services/googleAuthService.jsx";
 import CalDateModal from "./CalDateModal";
 import "./CalendarHeader.css"; 
 
@@ -22,7 +24,28 @@ function CalendarHeader({
   const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
   const [googleEmail, setGoogleEmail] = useState(null);
  
- 
+  // DB에서 Google 이메일 조회
+  const fetchGoogleEmail = async (userId) => {
+    try {
+      const { supabase } = await import('./supabaseClient.jsx');
+      const { data, error } = await supabase
+        .from('work_users')
+        .select('google_email')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (!error && data?.google_email) {
+        setGoogleEmail(data.google_email);
+      } else {
+        // Fallback: Google 소셜 로그인인 경우 userId가 이메일
+        setGoogleEmail(userId);
+      }
+    } catch (e) {
+      console.error('Failed to fetch Google email:', e);
+      setGoogleEmail(userId);
+    }
+  };
+
   // 세션에서 로그인 정보 불러오기
   useEffect(() => {
     const storedUserName = sessionStorage.getItem("userName");
@@ -38,7 +61,9 @@ function CalendarHeader({
       // 2. Dayf 회원가입 사용자 중 Google Calendar 연동 완료
       if (storedAccessToken) {
         setIsGoogleCalendarConnected(true);
-        setGoogleEmail(storedUserId); // userId가 이메일 형식
+        
+        // Google 이메일 가져오기 (DB 조회)
+        fetchGoogleEmail(storedUserId);
       }
     }
   }, []);
@@ -62,6 +87,22 @@ function CalendarHeader({
 
   // 설정 툴팁 핸들러
   const handleSettingsTooltipToggle = () => {
+    // 설정 툴팁 열 때마다 최신 연동 상태 확인 (access_token 기준)
+    const storedAccessToken = sessionStorage.getItem("access_token");
+    if (storedAccessToken) {
+      const storedGoogleEmail = sessionStorage.getItem("google_email");
+      if (storedGoogleEmail) {
+        setIsGoogleCalendarConnected(true);
+        setGoogleEmail(storedGoogleEmail);
+      } else {
+        // 이메일이 없으면 미연동으로 간주
+        setIsGoogleCalendarConnected(false);
+        setGoogleEmail(null);
+      }
+    } else {
+      setIsGoogleCalendarConnected(false);
+      setGoogleEmail(null);
+    }
     setIsSettingsTooltipOpen(!isSettingsTooltipOpen);
     setIsUserTooltipOpen(false); // 다른 툴팁 닫기
   };
@@ -72,6 +113,7 @@ function CalendarHeader({
     sessionStorage.removeItem("userId");
     sessionStorage.removeItem("userName");
     sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("google_email");
     sessionStorage.removeItem("googleuser");
     window.location.href = "/";
   };
@@ -86,11 +128,111 @@ function CalendarHeader({
     setIsUserTooltipOpen(false);
   };
 
+  // 에러 로그 저장 함수 (프런트에서 직접 DB 저장)
+  const saveErrorLog = async (pageName, errCode, errContent) => {
+    try {
+      await GoogleAccountManage.saveErrorLog(pageName, errCode, errContent, userId);
+    } catch (e) {
+      console.error('Error log save failed:', e);
+    }
+  };
+
   // Google Calendar 연동 핸들러
+  const connectGoogleCalendar = useGoogleLogin({
+    flow: 'implicit',
+    scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
+    prompt: 'consent',
+    overrideScope: true,
+    onSuccess: async ({ access_token }) => {
+
+      try {
+        if (!access_token) {
+          alert('Google 액세스 토큰을 받지 못했습니다. 다시 시도해주세요.');
+          return;
+        }
+
+        // 프런트에서 현재 Dayf 계정에 Google 연동 처리
+        const result = await GoogleAccountManage.linkGoogleToCurrentUser(userId, access_token);
+
+        if (result?.error) {
+          if (result.error === 'EMAIL_IS_USERID') {
+            const confirmed = confirm(
+              `선택하신 Google 계정(${result.conflictUserId})은 이미 Dayf 계정 ID로 등록되어 있습니다.\n\n` +
+              `이 Google 계정으로는 로그인할 수 없으며, 해당 계정의 근무 설정 값이 삭제됩니다.\n\n` +
+              `계속하시겠습니까?`
+            );
+            if (confirmed) {
+              const del = await GoogleAccountManage.deleteAccount(result.conflictUserId);
+              if (del.success) {
+                alert(`${result.conflictUserId} 계정이 삭제되었습니다. Google Calendar 연동을 다시 진행해주세요.`);
+                handleGoogleCalendarConnect();
+                return;
+              } else {
+                alert('계정 삭제 중 오류가 발생했습니다.');
+              }
+            } else {
+              alert('Google Calendar 연동이 취소되었습니다.');
+            }
+            await saveErrorLog('CalendarHeader', 409, `Email is userId conflict: ${result.conflictUserId}`);
+            return;
+          }
+          if (result.error === 'ALREADY_LINKED') {
+            alert(result.message || '해당 Google 계정은 이미 다른 Dayf 계정에 연동되어 있습니다.');
+            await saveErrorLog('CalendarHeader', 409, `Already linked: ${result.message}`);
+            return;
+          }
+          if (result.error === 'DAYF_ACCOUNT_EXISTS') {
+            alert(result.message || '해당 이메일로 이미 Dayf 계정이 존재합니다. 일반 로그인을 이용해주세요.');
+            await saveErrorLog('CalendarHeader', 409, `Dayf account exists: ${result.message}`);
+            return;
+          }
+          alert(result.message || '알 수 없는 오류가 발생했습니다.');
+          await saveErrorLog('CalendarHeader', 409, `Unknown 409 error: ${JSON.stringify(result)}`);
+          return;
+        }
+
+        const { user, google_email } = result;
+        const finalGoogleEmail = google_email || user?.email;
+
+        // 세션에 access_token과 google_email 저장
+        sessionStorage.setItem('access_token', access_token);
+        if (finalGoogleEmail) {
+          sessionStorage.setItem('google_email', finalGoogleEmail);
+        }
+
+        // 연동 상태 업데이트
+        setIsGoogleCalendarConnected(true);
+        setGoogleEmail(finalGoogleEmail); // Google 이메일 표시
+        setIsSettingsTooltipOpen(false);
+
+        alert(`Google Calendar 연동이 완료되었습니다!\n연동 계정: ${finalGoogleEmail}`);
+      } catch (e) {
+        console.error('Google Calendar 연동 중 오류:', e);
+        
+        // 에러 로그 저장
+        await saveErrorLog('CalendarHeader', 'EXCEPTION', `Google Calendar 연동 오류: ${e.message}`);
+        
+        alert('Google Calendar 연동 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+    },
+    onError: (error) => {
+      // onError는 Google OAuth 팝업 자체의 실패 (사용자가 취소, 팝업 차단 등)
+
+      console.error('Google 인증 실패:', error);
+      
+      // 에러 로그 저장 (동기적으로 처리)
+      saveErrorLog('CalendarHeader', 'AUTH_FAILED', `Google 인증 실패: ${JSON.stringify(error)}`);
+      
+      alert('Google 인증에 실패했습니다. 팝업 차단을 해제하고 다시 시도해주세요.');
+      
+      
+    },
+  });
+
   const handleGoogleCalendarConnect = () => {
-    // TODO: Google Calendar 연동 로직 구현
-    alert("Google Calendar 연동 기능 구현 전");
-    setIsSettingsTooltipOpen(false);
+    // access_token 초기화 후 연동 시작
+    sessionStorage.removeItem('access_token');
+    connectGoogleCalendar();
   };
 
   // Google Calendar 일정 등록 핸들러
@@ -109,8 +251,34 @@ function CalendarHeader({
 
   // Google 연동 해제 핸들러
   const handleDisconnectGoogle = () => {
-    // TODO: Google Calendar 연동 해제 로직 구현
-   alert("Google Calendar 연동 해제 구현 전");
+    (async () => {
+      try {
+        // DB에서도 Google 연동 정보 제거
+        const res = await GoogleAccountManage.unlinkGoogleFromUser(userId);
+        if (!res.success) {
+          alert('연동 해제 중 DB 오류가 발생했습니다.');
+          return;
+        }
+
+        // 세션에서 access_token과 google_email 제거
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('google_email');
+        sessionStorage.removeItem('googleuser');
+
+        // 연동 상태 업데이트 (미연동 툴팁으로 전환)
+        setIsGoogleCalendarConnected(false);
+        setGoogleEmail(null);
+        setIsSettingsTooltipOpen(false);
+
+        alert('Google Calendar 연동이 해제되었습니다.');
+      } catch (e) {
+        console.error('Disconnect failed:', e);
+        // 에러 로그 저장
+        await saveErrorLog('CalendarHeader', 'EXCEPTION', `Google Calendar 연동 해제 중 오류: ${e.message}`);
+
+        alert('연동 해제 중 오류가 발생했습니다.');
+      }
+    })();
   };
 
   return (
@@ -121,7 +289,6 @@ function CalendarHeader({
       >
         {userId && (
           <>
-            
              {/* 근무설정버튼 */}
             <div style={{ position: "relative" }}>
               <button
