@@ -219,6 +219,35 @@
   transform: rotate(45deg);
 }
 
+/* 설정 툴팁 스타일 (왼쪽 정렬) */
+.settings-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  min-width: 200px;
+  z-index: 1000;
+  margin-top: 8px;
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.settings-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 12px;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-bottom: none;
+  border-right: none;
+  transform: rotate(45deg);
+}
+
 .user-tooltip-header {
   padding: 12px 16px;
   border-bottom: 1px solid #f3f4f6;

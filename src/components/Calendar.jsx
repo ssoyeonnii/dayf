@@ -212,9 +212,10 @@ function Calendar() {
                 return;
               }
               const event = {
-                summary: 'Test Event from ShiftWork',
-                location: 'Seoul, Korea',
-                description: 'Google Calendar API insert test',
+                summary: '야간',
+                // location: 'Seoul, Korea',
+                description: 'dayf',
+                colorId : '9',
                 start: {
                   dateTime: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
                 },

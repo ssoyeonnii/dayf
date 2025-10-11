@@ -18,30 +18,28 @@ function CalendarHeader({
   const [userName, setUserName] = useState(null);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
   const [isUserTooltipOpen, setIsUserTooltipOpen] = useState(false);
-  const monthNames = [
-    "1월",
-    "2월",
-    "3월",
-    "4월",
-    "5월",
-    "6월",
-    "7월",
-    "8월",
-    "9월",
-    "10월",
-    "11월",
-    "12월",
-  ];
-
+  const [isSettingsTooltipOpen, setIsSettingsTooltipOpen] = useState(false);
+  const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState(null);
+ 
  
   // 세션에서 로그인 정보 불러오기
   useEffect(() => {
     const storedUserName = sessionStorage.getItem("userName");
     const storedUserId = sessionStorage.getItem("userId");
+    const storedAccessToken = sessionStorage.getItem("access_token"); //google 연동 상태 구별
 
     if (storedUserId && storedUserName) {
       setUserId(storedUserId);
       setUserName(storedUserName);
+      
+      // Google Calendar 연동 상태 확인
+      // 1. Google 소셜 로그인 사용자 + access_token 있음
+      // 2. Dayf 회원가입 사용자 중 Google Calendar 연동 완료
+      if (storedAccessToken) {
+        setIsGoogleCalendarConnected(true);
+        setGoogleEmail(storedUserId); // userId가 이메일 형식
+      }
     }
   }, []);
 
@@ -59,6 +57,13 @@ function CalendarHeader({
   // 사용자 툴팁 핸들러
   const handleUserTooltipToggle = () => {
     setIsUserTooltipOpen(!isUserTooltipOpen);
+    setIsSettingsTooltipOpen(false); // 다른 툴팁 닫기
+  };
+
+  // 설정 툴팁 핸들러
+  const handleSettingsTooltipToggle = () => {
+    setIsSettingsTooltipOpen(!isSettingsTooltipOpen);
+    setIsUserTooltipOpen(false); // 다른 툴팁 닫기
   };
 
   const navigate = useNavigate();
@@ -66,6 +71,8 @@ function CalendarHeader({
   const handleLogout = () => {
     sessionStorage.removeItem("userId");
     sessionStorage.removeItem("userName");
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("googleuser");
     window.location.href = "/";
   };
 
@@ -79,6 +86,33 @@ function CalendarHeader({
     setIsUserTooltipOpen(false);
   };
 
+  // Google Calendar 연동 핸들러
+  const handleGoogleCalendarConnect = () => {
+    // TODO: Google Calendar 연동 로직 구현
+    alert("Google Calendar 연동 기능 구현 전");
+    setIsSettingsTooltipOpen(false);
+  };
+
+  // Google Calendar 일정 등록 핸들러
+  const handleSyncToGoogleCalendar = () => {
+    // TODO: Google Calendar 일정 등록 로직 구현
+    alert("Google Calendar 일정 등록 기능 구현 전");
+    setIsSettingsTooltipOpen(false);
+  };
+
+  // Google 연동 계정 변경 핸들러
+  const handleChangeGoogleAccount = () => {
+    // TODO: Google 계정 변경 로직 구현
+    alert("Google 계정 변경 기능을 구현 전");
+    setIsSettingsTooltipOpen(false);
+  };
+
+  // Google 연동 해제 핸들러
+  const handleDisconnectGoogle = () => {
+    // TODO: Google Calendar 연동 해제 로직 구현
+   alert("Google Calendar 연동 해제 구현 전");
+  };
+
   return (
     <div className="text-gray-900" style={{ display: "flex", flexDirection: "column", width: "100%" }}>
       <div
@@ -89,22 +123,119 @@ function CalendarHeader({
           <>
             
              {/* 근무설정버튼 */}
-            <button
-              onClick={onSettingsClick}
-              className="btn_setting"
-              style={{
-                backgroundColor: "transparent",
-                width: "fit-content",
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-                width="20px"
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={handleSettingsTooltipToggle}
+                className="btn_setting"
+                style={{
+                  backgroundColor: "transparent",
+                  width: "fit-content",
+                }}
               >
-                <path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z" />
-              </svg>
-            </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512"
+                  width="20px"
+                >
+                  <path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z" />
+                </svg>
+              </button>
+
+              {/* 설정 툴팁 메뉴 */}
+              {isSettingsTooltipOpen && (
+                <div className="settings-tooltip">
+                  {!isGoogleCalendarConnected ? (
+                    // Google Calendar 미연동 상태
+                    <div className="user-tooltip-actions">
+                      <button 
+                        className="user-tooltip-btn primary" 
+                        onClick={() => {
+                          setIsSettingsTooltipOpen(false);
+                          onSettingsClick();
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M12 2v6m0 4v10M2 12h6m4 0h10" 
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        근무 설정
+                      </button>
+                      <button 
+                        className="user-tooltip-btn secondary" 
+                        onClick={handleGoogleCalendarConnect}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M16 2v4M8 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" 
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Google Calendar<br/>연동하기
+                      </button>
+                    </div>
+                  ) : (
+                    // Google Calendar 연동 완료 상태
+                    <>
+                      <div className="user-tooltip-header">
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" 
+                                  stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M22 4L12 14.01l-3-3" 
+                                  stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <span className="user-tooltip-name" style={{ fontSize: "12px" }}>{googleEmail}</span>
+                        </div>
+                      </div>
+                      <div className="user-tooltip-actions">
+                        <button 
+                          className="user-tooltip-btn primary" 
+                          onClick={() => {
+                            setIsSettingsTooltipOpen(false);
+                            onSettingsClick();
+                          }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2v6m0 4v10M2 12h6m4 0h10" 
+                                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          근무 설정
+                        </button>
+                        <button 
+                          className="user-tooltip-btn secondary" 
+                          onClick={handleSyncToGoogleCalendar}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5l5-5m0 0l5 5m-5-5v12" 
+                                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          Google Calendar<br/>일정등록
+                        </button>
+                        <button 
+                          className="user-tooltip-btn secondary" 
+                          onClick={handleChangeGoogleAccount}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" 
+                                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          Google 연동 계정 변경
+                        </button>
+                        <button 
+                          className="user-tooltip-btn danger" 
+                          onClick={handleDisconnectGoogle}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 6L6 18M6 6l12 12" 
+                                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          Google 연동 해제
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* 회원정보버튼 */}
             <div style={{ position: "relative" }}>
               <button
