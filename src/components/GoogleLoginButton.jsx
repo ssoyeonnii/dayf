@@ -27,8 +27,7 @@ const GoogleLoginButton = () => {
 
         sessionStorage.setItem('userName', user?.name || 'GoogleUser');
         sessionStorage.setItem('userId', user?.email || '');
-        sessionStorage.setItem('googleuser', '1');
-        if (access_token) sessionStorage.setItem('access_token', access_token);
+        if (access_token) sessionStorage.setItem('access_token', access_token); //access_token: google 연동 상태 구별
 
         alert(`${user?.name || '사용자'}님 환영합니다!`);
         navigate('/');
