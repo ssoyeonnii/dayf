@@ -79,6 +79,9 @@ function DeleteAccount() {
         alert("회원 탈퇴가 완료되었습니다.");
         sessionStorage.removeItem("userId");
         sessionStorage.removeItem("userName");
+        sessionStorage.removeItem("access_token");
+        sessionStorage.removeItem("google_email");
+        sessionStorage.removeItem("googleuser");
         navigate("/");
       }
 

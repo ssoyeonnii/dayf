@@ -29,7 +29,7 @@ function UserJoin() {
 
     const { data, error } = await supabase
       .from("work_users")
-      .select("user_id")
+      .select("user_id, google_sub")
       .eq("user_id", value);
 
     if (error) {
@@ -40,8 +40,14 @@ function UserJoin() {
     }
 
     if (data.length > 0) {
-      setCheckMsg("이미 존재하는 ID입니다.");
-      setIsDuplicate(true);
+      // Google 소셜 로그인 계정인지 확인
+      if (data[0].google_sub) {
+        setCheckMsg("이미 Google 계정으로 가입되어 있습니다. Google 로그인을 이용해주세요.");
+        setIsDuplicate(true);
+      } else {
+        setCheckMsg("이미 존재하는 ID입니다.");
+        setIsDuplicate(true);
+      }
     } else {
       setCheckMsg("사용 가능한 ID입니다.");
       setIsDuplicate(false);

@@ -46,8 +46,14 @@ function UserLogin() {
       // sessionStorage에 저장
       sessionStorage.setItem("userName", data.user_name);
       sessionStorage.setItem("userId", data.user_id);
-      sessionStorage.setItem("googleuser", "0"); //구글유저가 아님
       sessionStorage.setItem("google_email", data.google_email);
+
+      if (data.google_email) {//db에 google_email이 있으면 구글연동유저
+        sessionStorage.setItem("googleuser", "1"); //구글유저
+      } else {
+        sessionStorage.setItem("googleuser", "0"); //구글유저가 아님
+      }
+
       navigate("/"); //calendar.jsx로 이동
     } else {
       setErrorMsg("비밀번호가 일치하지 않습니다.");
