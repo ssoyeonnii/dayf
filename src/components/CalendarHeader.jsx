@@ -51,15 +51,15 @@ function CalendarHeader({
     const storedUserName = sessionStorage.getItem("userName");
     const storedUserId = sessionStorage.getItem("userId");
     const storedAccessToken = sessionStorage.getItem("access_token"); //google 연동 상태 구별
+    const storedGoogleEmail = sessionStorage.getItem("google_email"); //google 연동 상태 구별
 
     if (storedUserId && storedUserName) {
       setUserId(storedUserId);
       setUserName(storedUserName);
-      
       // Google Calendar 연동 상태 확인
       // 1. Google 소셜 로그인 사용자 + access_token 있음
       // 2. Dayf 회원가입 사용자 중 Google Calendar 연동 완료
-      if (storedAccessToken) {
+      if (storedAccessToken || storedGoogleEmail) {
         setIsGoogleCalendarConnected(true);
         
         // Google 이메일 가져오기 (DB 조회)
@@ -89,8 +89,9 @@ function CalendarHeader({
   const handleSettingsTooltipToggle = () => {
     // 설정 툴팁 열 때마다 최신 연동 상태 확인 (access_token 기준)
     const storedAccessToken = sessionStorage.getItem("access_token");
-    if (storedAccessToken) {
-      const storedGoogleEmail = sessionStorage.getItem("google_email");
+    const storedGoogleEmail = sessionStorage.getItem("google_email");
+
+    if (storedAccessToken || storedGoogleEmail) {
       if (storedGoogleEmail) {
         setIsGoogleCalendarConnected(true);
         setGoogleEmail(storedGoogleEmail);
@@ -161,19 +162,22 @@ function CalendarHeader({
               `이 Google 계정으로는 로그인할 수 없으며, 해당 계정의 근무 설정 값이 삭제됩니다.\n\n` +
               `계속하시겠습니까?`
             );
+            let errmsg = '';
             if (confirmed) {
               const del = await GoogleAccountManage.deleteAccount(result.conflictUserId);
               if (del.success) {
                 alert(`${result.conflictUserId} 계정이 삭제되었습니다. Google Calendar 연동을 다시 진행해주세요.`);
                 handleGoogleCalendarConnect();
-                return;
+                return; //계정 삭제 후 saveErrorLog()함수 호출 안됨
               } else {
+                errmsg = 'dayf 계정 ID의 google 계정 삭제 중 오류가 발생했습니다.';
                 alert('계정 삭제 중 오류가 발생했습니다.');
               }
             } else {
+              errmsg = 'Google Calendar 연동이 취소되었습니다.';
               alert('Google Calendar 연동이 취소되었습니다.');
             }
-            await saveErrorLog('CalendarHeader', 409, `Email is userId conflict: ${result.conflictUserId}`);
+            await saveErrorLog('CalendarHeader', 409, errmsg +`: ${result.conflictUserId}`);
             return;
           }
           if (result.error === 'ALREADY_LINKED') {

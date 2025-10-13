@@ -20,7 +20,7 @@ async function saveErrorLog(pageName, errCode, errContent, userId) {
     await supabase
       .from("Log_error")
       .insert({
-        page_name: pageName,
+        page_name: pageName,    
         err_code: String(errCode),
         err_content: errContent,
         user_id: userId || null,
