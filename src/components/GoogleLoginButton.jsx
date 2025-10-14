@@ -36,6 +36,7 @@ const GoogleLoginButton = () => {
         sessionStorage.setItem('userId', user?.email || '');
         sessionStorage.setItem('googleuser', "1");
         sessionStorage.setItem('access_token', access_token);
+        sessionStorage.setItem('google_email', user?.email || '');
 
         alert(`${user?.name || '사용자'}님 환영합니다!`);
         navigate('/');
@@ -57,12 +58,42 @@ const GoogleLoginButton = () => {
   }
 
   return (
-    <>
-      <button onClick={() => { sessionStorage.removeItem('access_token'); loginWithGoogle(); }} className="form-action-btn" style={{ width: "100%" }}>
-        Google로 계속하기
-      </button>
-    </>
+    <button 
+      onClick={() => { 
+        sessionStorage.removeItem('access_token'); 
+        loginWithGoogle(); 
+      }} 
+      style={{
+        width: "100%",
+        height: "40px",
+        backgroundColor: "#fff",
+        color: "#3c4043",
+        border: "1px solid #dadce0",
+        borderRadius: "12px",
+        fontSize: "14px",
+        fontFamily: "Roboto, arial, sans-serif",
+        fontWeight: "500",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "12px",
+        cursor: "pointer",
+        padding: "25px 20px",
+        transition: "background-color 0.2s, box-shadow 0.2s",
+      }}
+    >
+      <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+        <g fill="none" fillRule="evenodd">
+          <path d="M17.6 9.2l-.1-1.8H9v3.4h4.8C13.6 12 13 13 12 13.6v2.2h3a8.8 8.8 0 0 0 2.6-6.6z" fill="#4285F4"/>
+          <path d="M9 18c2.4 0 4.5-.8 6-2.2l-3-2.2a5.4 5.4 0 0 1-8-2.9H1V13a9 9 0 0 0 8 5z" fill="#34A853"/>
+          <path d="M4 10.7a5.4 5.4 0 0 1 0-3.4V5H1a9 9 0 0 0 0 8l3-2.3z" fill="#FBBC05"/>
+          <path d="M9 3.6c1.3 0 2.5.4 3.4 1.3L15 2.3A9 9 0 0 0 1 5l3 2.4a5.4 5.4 0 0 1 5-3.7z" fill="#EA4335"/>
+        </g>
+      </svg>
+      Google로 계속하기
+    </button>
   );
 };
+
 
 export default GoogleLoginButton;
