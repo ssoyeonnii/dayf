@@ -22,15 +22,14 @@ function Calendar() {
   const [shifts, setShifts] = useState({});
 
   //사용자설정 없을 경우 기본 default값
-  // defaultConfig는 초기값 역할만 하며, 바뀌지 않기 때문에 usestate사용안함
   const defaultConfig = {
     shiftType: "1",
     pattern: [
-      { type: "주간", workDays: 0, offDays: 0 },
-      { type: "야간", workDays: 0, offDays: 0 },
-      { type: "오후", workDays: 0, offDays: 0 },
+      { type: "주간", workDays: 2, offDays: 0 },
+      { type: "야간", workDays: 2, offDays: 0 },
+      { type: "오후", workDays: 2, offDays: 0 },
     ],
-    holidayOffYn: false, // 공휴일 휴무 여부
+    holidayOffYn: 2, // 공휴일 휴무 여부
     startDate: new Date(),
     patternStartShift: "", // 시작일자의 근무형태
   };
@@ -61,10 +60,9 @@ function Calendar() {
           .maybeSingle();
 
         if (error || !data) {
-          alert("사용자 설정 값을 입력해주세요");
-          console.log("유저 설정이 없거나 불러오기 실패:", error);
-          setIsSettingsOpen(true); // 설정 없으면 모달 열기
-
+          // 새로 가입한 사용자의 경우 조용히 기본 설정으로 초기화
+          console.log("새 사용자 또는 설정 없음:", error?.message || "데이터 없음");
+          
           // 기본 설정으로 초기화
           const defaultConfigWithUser = {
             ...defaultConfig,
@@ -76,6 +74,12 @@ function Calendar() {
           //console.log(JSON.stringify(defaultConfigWithUser));
           setShiftConfig(defaultConfigWithUser);
           setUserSetConfig(defaultConfigWithUser);
+          
+          // 새 사용자에게만 설정 모달 표시 (기존 사용자가 설정을 삭제한 경우는 제외)
+          if (!error) {
+            alert("교대근무 설정을 입력해주세요");
+            setIsSettingsOpen(true);
+          }
         } else {
           // pattern_json이 문자열이면 JSON.parse
           const parsedPattern =
@@ -87,7 +91,7 @@ function Calendar() {
             shiftType: data.shift_type,
             pattern:
               typeof data.pattern === "string"
-                ? JSON.parse(data.pattern)
+                ? JSON.parse(data.pattern)  
                 : data.pattern,
             holidayOffYn: data.holiday_off_yn,
             startDate: new Date(data.pattern_start_date),
@@ -168,10 +172,21 @@ function Calendar() {
 
   const datepickerRef = useRef(null);
 
-  const goToDatePicker = () => {
-    if (datepickerRef.current) {
-      datepickerRef.current.setOpen(true);
-    }
+  // 날짜 선택 핸들러 (CalDateModal용)
+  const handleDateSelect = (selectedYear, selectedMonth) => {
+    setDate({
+      year: selectedYear,
+      month: selectedMonth
+    });
+  };
+
+   // 오늘 날짜가 있는 월로 이동하는 함수 추가
+   const goToToday = () => {
+    const today = new Date();
+    setDate({
+      year: today.getFullYear(),
+      month: today.getMonth(),
+    });
   };
 
   // 모달용 datepickerRef 추가
@@ -184,9 +199,10 @@ function Calendar() {
   };
 
   return (
-    <div className="calendar-container">
+    <div className="calendar-container text-gray-900">
       {isSettingsOpen && userSetConfig && (
         <SettingModal
+          isOpen={isSettingsOpen}
           ref={modalBackground}
           onClose={() => setIsSettingsOpen(false)}
           onSave={async () => {
@@ -254,11 +270,13 @@ function Calendar() {
         month={date.month}
         onPrevMonth={goToPrevMonth}
         onNextMonth={goToNextMonth}
-        onDateClick={goToDatePicker} // 월 변경용 datepicker 열기
-        userId={userId}
+        onDateSelect={handleDateSelect} // CalDateModal용 핸들러로 변경
         onSettingsClick={
           () => setIsSettingsOpen(true) // 모달 열기
         }
+        onTodayClick={goToToday} // 오늘 버튼 클릭 시 호출될 함수
+        currentYear={today.getFullYear()} // 오늘 연도
+        currentMonth={today.getMonth()} // 오늘 월
       />
 
       {/* 숨겨진 DatePicker popup */}
@@ -283,6 +301,7 @@ function Calendar() {
         holidays={holidays}
         shifts={shifts}
       />
+
     </div>
   );
 }

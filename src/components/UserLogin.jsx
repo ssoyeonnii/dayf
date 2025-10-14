@@ -3,6 +3,7 @@ import { supabase } from "./supabaseClient.jsx";
 import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
 import "./UserJoin.css";
+import GoogleLoginButton from "./GoogleLoginButton.jsx";
 
 function UserLogin() {
   const [userid, setUserid] = useState("");
@@ -30,7 +31,13 @@ function UserLogin() {
       return;
     }
 
-    // 2. 비밀번호 비교
+    // 2. Google 소셜 로그인 계정인지 확인
+    if (data.google_sub && !data.user_pw) {
+      setErrorMsg("Google 계정으로 가입하셨습니다. 'Google로 계속하기' 버튼을 이용해주세요.");
+      return;
+    }
+
+    // 3. 비밀번호 비교
     const isPasswordCorrect = await bcrypt.compare(userpw, data.user_pw);
 
     if (isPasswordCorrect) {
@@ -39,7 +46,9 @@ function UserLogin() {
       // sessionStorage에 저장
       sessionStorage.setItem("userName", data.user_name);
       sessionStorage.setItem("userId", data.user_id);
-              
+      sessionStorage.setItem("google_email", data.google_email);
+      sessionStorage.setItem("googleuser", "0"); //구글유저가 아님
+
       navigate("/"); //calendar.jsx로 이동
     } else {
       setErrorMsg("비밀번호가 일치하지 않습니다.");
@@ -47,8 +56,7 @@ function UserLogin() {
   };
 
   return (
-    <div className="form-container">
-      <h2>로그인</h2>
+    <div className="form-container text-gray-900">
       <div className="form-group">
         <label>ID</label>
         <input
@@ -69,9 +77,17 @@ function UserLogin() {
 
       {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
 
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={handleLogin} style={{ width: "100%" }}>로그인</button>
+      <div className="mg-t-24 mg-b-24">
+        <button onClick={handleLogin} className="form-action-btn">
+          로그인
+        </button>
       </div>
+
+      <div className="mg-t-24 mg-b-24">
+        <GoogleLoginButton />
+      </div>
+
+      <span className="text-gray-600 fs-15">dayf가 처음이신가요? <a href="/UserJoin">회원가입</a></span>
     </div>
   );
 }

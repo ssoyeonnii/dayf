@@ -8,17 +8,23 @@ function DeleteAccount() {
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
-  const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
+  //Session googleuser 값 확인
+  const googleuser = sessionStorage.getItem("googleuser");
+  const [agreemsg, setAgreemsg] = useState(""); //사용자가 입력하는 탈퇴 동의 메세지
+  const isGoogleUser = googleuser == "1"; //1 : true, 0 : false
+  const canSubmit = isGoogleUser ? agreemsg.trim() === "동의합니다" : !!password.trim();
+  //구글 유저면 탈퇴 동의 메세지 입력해야 탈퇴버튼 활성화, 구글 유저가 아닐 경우 비밀번호 입력 시 활성화
 
   const deleteUser = async () => {
-    if (!agree) {
-      alert("모든 정보 삭제에 동의해야 탈퇴가 가능합니다.");
+    
+    if (!password && googleuser == "0") {
+      alert("비밀번호를 입력해주세요.");
       return;
     }
 
-    if (!password) {
-      alert("비밀번호를 입력해주세요.");
+    if ((!agreemsg && googleuser == "1") || (googleuser == "1" && agreemsg !== "동의합니다")) {
+      alert("동의합니다를 입력해주세요.");
       return;
     }
 
@@ -38,16 +44,18 @@ function DeleteAccount() {
         alert("사용자 정보를 불러오는 데 실패했습니다.");
         return;
       }
-      const hashedPassword = data.user_pw;
 
-      // 2. 입력한 비밀번호와 DB 해시값 비교
-      const isMatch = await bcrypt.compare(password, hashedPassword);
+      if (googleuser == "0") {
+        const hashedPassword = data.user_pw;
 
-      if (!isMatch) {
-        alert("비밀번호가 일치하지 않습니다.");
-        return;
+        // 2. 입력한 비밀번호와 DB 해시값 비교
+        const isMatch = await bcrypt.compare(password, hashedPassword);
+
+        if (!isMatch) {
+          alert("비밀번호가 일치하지 않습니다.");
+          return;
+        }
       }
-
       // 3. 탈퇴 처리
       // 3.1. work_user_shift테이블에서 user_id를 참조하는 데이터 삭제
       const { error: deleteShiftError } = await supabase
@@ -71,6 +79,9 @@ function DeleteAccount() {
         alert("회원 탈퇴가 완료되었습니다.");
         sessionStorage.removeItem("userId");
         sessionStorage.removeItem("userName");
+        sessionStorage.removeItem("access_token");
+        sessionStorage.removeItem("google_email");
+        sessionStorage.removeItem("googleuser");
         navigate("/");
       }
 
@@ -83,84 +94,57 @@ function DeleteAccount() {
   };
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.heading}>회원 탈퇴</h2>
-      <p style={styles.warning}>
+    <div className="form-container text-gray-900">
+      <div className="text-center text-2xl font-bold mg-b-52">회원 탈퇴</div>
+      <p className="text-red-500 fs-18 fw-800 mg-b-24">
         탈퇴 시 계정 정보와 모든 데이터는<br/>
-        영구적으로 삭제되며 복구할 수 없습니다.
+        영구적으로 삭제되며 복구할 수 없으며, 이에 동의합니다.
       </p>
 
-      <div style={styles.section}>
+      {/* 구글유저가 아닐 경우 비밀번호 입력 */}
+      {googleuser == "0" && (
+      <div className="form-group">
         <input
+        autoComplete="off"
           type="password"
-          style={styles.input}
+          style={{borderBottom:"1px solid #000"}}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="비밀번호를 입력하세요"
         />
       </div>
 
-      <div style={styles.section}>
-        <label>
-          <input
-            type="checkbox"
-            checked={agree}
-            onChange={(e) => setAgree(e.target.checked)}
-          />
-          {" "}모든 정보를 삭제하는 데 동의합니다.
-        </label>
+      )}
+
+      {/* 구글 유저인 경우 동의합니다 입력 */}
+      {googleuser == "1" && (
+      <div className="form-group">
+        <input
+        autoComplete="off"
+          type="text"
+          name="agreemsg"
+          value={agreemsg}
+          style={{borderBottom:"1px solid #000"}}
+          onChange={(e) => setAgreemsg(e.target.value)}
+          placeholder="동의합니다"
+        />
       </div>
 
-      <button
-        onClick={deleteUser}
-        disabled={loading}
-        style={styles.button}
-      >
-        {loading ? "처리 중..." : "회원 탈퇴"}
-      </button>
+      )}
+
+      <div className="mg-t-40 flex justify-center">
+        <button
+          type="button"
+          onClick={deleteUser}
+          disabled={!canSubmit}
+          className={`user-action-btn danger ${canSubmit ? "active" : "disabled"}`}
+        >
+          회원 탈퇴
+        </button>
+      </div>
     </div>
   );
 }
 
 export default DeleteAccount;
 
-const styles = {
-  container: {
-    margin: "0px auto",
-    padding: "20px",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    fontFamily: "sans-serif",
-    minWidth: "300px",  
-    textAlign: "center",
-    width: "100%",
-    boxSizing: "border-box",
-  },
-  heading: {
-    fontSize: "24px",
-    marginBottom: "20px",
-  },
-  warning: {
-    color: "#c00",
-    fontWeight: "bold",
-    marginBottom: "20px",
-  },
-  section: {
-    marginBottom: "15px",
-  },
-  input: {
-    padding: "10px",
-    marginTop: "5px",
-    fontSize: "14px",
-  },
-  button: {
-    width: "100%",
-    padding: "12px",
-    backgroundColor: "#c00",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "16px",
-    cursor: "pointer",
-  },
-};

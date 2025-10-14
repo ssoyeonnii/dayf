@@ -1,4 +1,3 @@
-import { HolidayUtils } from "./HolidayUtils";
 // 교대 근무 로직 (패턴 생성)
 export async function ShiftUtils(
   year,
@@ -80,26 +79,30 @@ export async function ShiftUtils(
   while (current.getTime() <= targetEndDate.getTime()) {
     const { type, workDays, offDays } = pattern[patternIndex];
 
-    // 근무일
-    for (let i = 0; i < workDays; i++) {
-      if (current.getTime() >= targetStartDate.getTime() && current.getTime() <= targetEndDate.getTime()) {
-        const key = formatDate(current);
-        if (holidayOffYn && holidayList.includes(key)) {
-          shifts[key] = "휴무";
-        } else {
-          shifts[key] = type;
+    // 근무일 (workDays가 0이면 건너뛰기)
+    if (workDays > 0) {
+      for (let i = 0; i < workDays; i++) {
+        if (current.getTime() >= targetStartDate.getTime() && current.getTime() <= targetEndDate.getTime()) {
+          const key = formatDate(current);
+          if (holidayOffYn && holidayList.includes(key)) {
+            shifts[key] = "휴무";
+          } else {
+            shifts[key] = type;
+          }
         }
+        current.setDate(current.getDate() + 1);
       }
-      current.setDate(current.getDate() + 1);
     }
 
-    // 휴무일
-    for (let i = 0; i < offDays; i++) {
-      if (current.getTime() >= targetStartDate.getTime() && current.getTime() <= targetEndDate.getTime()) {
-        const key = formatDate(current);
-        shifts[key] = "휴무";
+    // 휴무일 (offDays가 0이면 건너뛰기)
+    if (offDays > 0) {
+      for (let i = 0; i < offDays; i++) {
+        if (current.getTime() >= targetStartDate.getTime() && current.getTime() <= targetEndDate.getTime()) {
+          const key = formatDate(current);
+          shifts[key] = "휴무";
+        }
+        current.setDate(current.getDate() + 1);
       }
-      current.setDate(current.getDate() + 1);
     }
 
     patternIndex = (patternIndex + 1) % pattern.length;

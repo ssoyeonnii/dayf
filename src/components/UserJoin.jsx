@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { supabase } from "./supabaseClient.jsx";
 import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
@@ -11,17 +11,17 @@ function UserJoin() {
   const [checkMsg, setCheckMsg] = useState("");
   const [isDuplicate, setIsDuplicate] = useState(false);
   const navigate = useNavigate();
+  const duplicateCheckTimerRef = useRef(null);
 
-  const handleDuplicateCheck = async () => {
-    if (!userid.trim()) {
+  const doDuplicateCheck = async (value) => {
+    if (!value.trim()) {
       setCheckMsg("ID를 입력해주세요.");
       setIsDuplicate(false);
       return;
     }
 
-    // 영문자 또는 숫자 이외의 문자가 있는지 확인
     const idPattern = /^[A-Za-z0-9]+$/;
-    if (!idPattern.test(userid)) {
+    if (!idPattern.test(value)) {
       setCheckMsg("ID는 영문자와 숫자만 사용할 수 있습니다.");
       setIsDuplicate(false);
       return;
@@ -29,8 +29,8 @@ function UserJoin() {
 
     const { data, error } = await supabase
       .from("work_users")
-      .select("user_id")
-      .eq("user_id", userid);
+      .select("user_id, google_sub")
+      .eq("user_id", value);
 
     if (error) {
       console.error("중복 확인 오류:", error.message);
@@ -40,12 +40,27 @@ function UserJoin() {
     }
 
     if (data.length > 0) {
-      setCheckMsg("이미 존재하는 ID입니다.");
-      setIsDuplicate(true);
+      // Google 소셜 로그인 계정인지 확인
+      if (data[0].google_sub) {
+        setCheckMsg("이미 Google 계정으로 가입되어 있습니다. Google 로그인을 이용해주세요.");
+        setIsDuplicate(true);
+      } else {
+        setCheckMsg("이미 존재하는 ID입니다.");
+        setIsDuplicate(true);
+      }
     } else {
       setCheckMsg("사용 가능한 ID입니다.");
       setIsDuplicate(false);
     }
+  };
+
+  const scheduleDuplicateCheck = () => {
+    if (duplicateCheckTimerRef.current) {
+      clearTimeout(duplicateCheckTimerRef.current);
+    }
+    duplicateCheckTimerRef.current = setTimeout(() => {
+      doDuplicateCheck(userid);
+    }, 300);
   };
 
   const handleSignUp = async () => {
@@ -54,12 +69,12 @@ function UserJoin() {
       return;
     }
 
-     // 이름는 영문자 또는 한글만 허용
-  const namePattern = /^[A-Za-z가-힣]+$/;
-  if (!namePattern.test(username)) {
-    alert("ID는 영문자 또는 한글만 입력할 수 있습니다.");
-    return;
-  }
+    // 이름는 영문자 또는 한글만 허용
+    const namePattern = /^[A-Za-z가-힣]+$/;
+    if (!namePattern.test(username)) {
+      alert("이름은 영문자 또는 한글만 입력할 수 있습니다.");
+      return;
+    }
 
     if (isDuplicate) {
       alert("중복된 ID입니다. 다른 ID를 사용해주세요.");
@@ -82,11 +97,16 @@ function UserJoin() {
         alert("회원가입에 실패했습니다.");
       } else {
         alert("회원가입 완료!");
+        
+        // 자동 로그인 처리
+        sessionStorage.setItem("userName", username);
+        sessionStorage.setItem("userId", userid);
+        
         setUsername("");
         setUserid("");
         setUserpw("");
         setCheckMsg("");
-        navigate("/UserLogin");
+        navigate("/"); // 캘린더 페이지로 이동
       }
     } catch (err) {
       console.error("비밀번호 암호화 실패:", err);
@@ -94,13 +114,14 @@ function UserJoin() {
   };
 
   return (
-    <div className="form-container">
-      <h2>회원가입</h2>
+    <div className="form-container text-gray-900">
+      {/* <div className="text-center text-2xl font-bold">회원가입</div> */}
 
       <div className="form-group">
         <label>이름</label>
         <input
           type="text"
+          autoComplete="off"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
@@ -111,10 +132,13 @@ function UserJoin() {
         <div className="input-button-wrapper">
           <input
             type="text"
+            autoComplete="off"
             value={userid}
             onChange={(e) => setUserid(e.target.value)}
+            onKeyDown={scheduleDuplicateCheck}
+            onKeyUp={scheduleDuplicateCheck}
           />
-          <button onClick={handleDuplicateCheck}>중복확인</button>
+
         </div>
         <div className="check-message">{checkMsg}</div>
       </div>
@@ -123,14 +147,19 @@ function UserJoin() {
         <label>비밀번호</label>
         <input
           type="password"
+          autoComplete="off"
           value={userpw}
           onChange={(e) => setUserpw(e.target.value)}
         />
       </div>
-
-      <button onClick={handleSignUp} style={{ width: "100%" }}>
-        회원가입
-      </button>
+      <div className="mg-t-24">
+        <button
+          onClick={handleSignUp}
+          className="form-action-btn"
+        >
+          회원가입
+        </button>
+      </div>
     </div>
   );
 }

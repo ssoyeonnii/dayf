@@ -1,8 +1,18 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
+  width:100%;
+  /* max-width: 1280px;   */
+   margin: 0 auto;
   /* padding: 2rem; */
   text-align: center;
+}
+
+header {
+  position:fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* z-index: 1000; */
+  background-color: white;
 }
 
 .logo {
@@ -30,6 +40,30 @@
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
+  }
+}
+
+/*브라우저 다크 모드일 때 스크롤 바 색상 적용*/
+/* Chrome/Safari/Edge (WebKit) */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #ffffff; /* 스크롤바 바탕 흰색 */
+  }
+  ::-webkit-scrollbar-thumb { /* 스크롤바 */
+    background-color: #c9c9c9; 
+    border-radius: 8px;
+    border: 2px solid #ffffff;
+  }
+}
+
+/* Firefox */
+@media (prefers-color-scheme: dark) {
+  html {
+    scrollbar-color: #c9c9c9 #ffffff;
   }
 }
 

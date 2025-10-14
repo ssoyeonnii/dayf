@@ -4,20 +4,21 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
   box-sizing: border-box;
+  padding: 0 10px;
 }
 
 .grid-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
 .date-cell {
   /* border-bottom: 1px solid #ddd; */
-  /* padding: 0.5rem; */
+   padding: 3px 0px;
   width: 100%;
   /* margin-left: 10px; */
   text-align: start;
@@ -25,7 +26,9 @@
   flex-direction: column;
   box-sizing: border-box;
   justify-content: space-between;
-  min-width: 100px;
+  min-width: 0px;
+  border-bottom: 1px solid #9ca3af;
+  padding-bottom:2px;
   
 }
 
@@ -83,22 +86,27 @@
 }
 
 .today-cell {
-  /* border-radius: 50%; */
-  /* background-color: #f0f0f0; */
+  background-color: #2c3e50;
+  color: white;
+  border-radius: 50%;
+  display: inline-block;
+  min-width: 24px;
+  text-align: center;
   font-weight: bold;
-  /* min-width: 50px; */
-  text-decoration: underline;
 }
 
 .shiftwork_name {
   color: black;
   text-align: center;
   font-size: 12px;
+  width:100%;
+  border-radius: 3px;
 }
 
 .date-text {
   width: 100%;
-  padding-left: 7px;
+  /* padding-left: 10px; */
+  text-align: center;
 }
 
 .div_header_container {
@@ -109,23 +117,45 @@
   justify-content: space-between;
   align-items: center;
   text-align: center;
+  position: relative;
 }
 .div_header_center {
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
   justify-content: center;
   align-items: center;
   text-align: center;
-  width: 60%;
+  /* width: 60%; */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 120px;
 }
 
-.react-datepicker-popper {
-  top: -20px !important;
-}
-
-.div_header_year,
 .div_header_month {
-  width: 15%;
+  cursor: pointer;
+}
+
+/* 월 이동 버튼 스타일 */
+.btn_prev_month,
+.btn_next_month {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn_prev_month:hover,
+.btn_next_month:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+  transform: scale(1.05);
 }
 
 .div_header_container .div_legend_container {
@@ -154,15 +184,10 @@
 
 .btn_prev_month,
 .btn_next_month {
-  background-color: #ffffff;
+  background-color: transparent;
   font-size: 15px;
 }
 
-.btn_prev_month:hover,
-.btn_next_month:hover {
-  background-color: #ffffff;
-  border-color: #f0f0f0;
-}
 
 .btn_prev_month .svg_left,
 .btn_next_month .svg_right {
@@ -170,20 +195,33 @@
   height: 15px;
 }
 
-.shiftwork_day {
+.shiftwork_day .shiftwork_name{
   background-color: bisque;
 }
-.shiftwork_evening {
+.shiftwork_evening .shiftwork_name{
   background-color: rgb(243, 188, 237);
 }
-.shiftwork_night {
+.shiftwork_night .shiftwork_name{
   background-color: rgb(146, 168, 236);
 }
 
 
 @media (max-width: 480px) {
   .date-cell {
-    max-width: 100px;
-    min-width: 50px;
+    max-width: none;
+    min-width: 0;
   }
+
+
+  .date-cell.empty.five-weeks,
+  .date-cell.date.five-weeks {
+    height: 75px;
+  }
+
+  .date-cell.empty.six-weeks,
+  .date-cell.date.six-weeks {
+    height: 63px;
+  }
+
+  
 }

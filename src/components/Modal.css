@@ -11,189 +11,352 @@
   z-index: 999;
 }
 
-.modal-content {
-  background: #fff;
-  padding: 30px 25px;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 520px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  font-size: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+.modal.open {
+  opacity: 1;
+  visibility: visible;
 }
 
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+
+.modal.open .modal-content {
+  transform: translateY(0);
+}
+
+/* 모달 헤더 */
 .modal-header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  position: relative;
-  margin-bottom: 10px;
+  padding: 10px 15px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .modal_header_txt {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
 .modal_close {
-  position: absolute;
-  right: 10px;
-  /* top: 50%; */
-  transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 24px;
+  color: #7f8c8d;
   cursor: pointer;
-}
-
-.form-row label,
-.modal-content label {
+  padding: 4px;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  gap: 10px;
-  margin-bottom: 10px;
-  white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
-.modal-content select{
-  flex: 1;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 13px;
+
+.work-settings-content {
+  padding: 15px 20px;
 }
 
-/* 공휴일 휴무여부 체크박스 */
-.modal-content input[type="checkbox"] {
-  transform: scale(1.2);
-  margin-left: 10px;
-}
-
-/* modal 버튼 영역 */
-.modal_button_group {
-  display: flex;
-  justify-content: center;
-}
-
-.modal_btn {
-  font-size: 14px;
-  padding: 10px 20px;
-  width: 60%;
-  border: none;
-  /* color: white; */
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-/* datepicker 위치 조정 */
-.react-datepicker-popper {
-  z-index: 1000 !important;
-  top: 10px !important;
-  left: 0 !important;  
-}
-
-/* datepicker input */
-.react-datepicker-wrapper input {
-  border: none !important;
-  border-bottom: 1px solid #ccc !important; 
-  padding: 5px 8px;
-  font-size: 14px;
-  width: 100%;
-  box-sizing: border-box;
-  text-align: center;
-}
-
-/* modal form */
-.modal-content form {
+/* 폼 스타일 */
+form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
-.form-row {
+.work-settings form label {
   display: flex;
-  gap: 20px;
-  /* flex-wrap: wrap; */
+  gap: 8px;
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 14px;
+  align-items: center;
+}
+
+
+select {
+  border-radius : 8px;
+}
+
+select, input[type="text"],input[type="password"] {
+  padding: 12px 10px;
+  /* border: 2px solid #e1e8ed; */
+  font-size: 14px;
+  background: transparent;
+}
+
+
+
+/* 근무일/휴무일 컨테이너 */
+.workoff-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.workoff-row {
+  display: grid;
+  /* grid-template-columns: 50% 50%; */
+  gap: 3px;
 }
 
 .form-item {
   display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 140px;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .form-item label {
+  /* margin-bottom: 8px; */
   font-size: 13px;
-  margin-bottom: 5px;
-  justify-content: center; 
-  align-items: center; 
+  color: #495057;
+  font-weight: 700;
+  align-items: center;
 }
 
-.form-item input[type="text"]{
-  border: none;
-  border-bottom: 1px solid #ccc;
-  padding: 5px 8px;
-  width: auto;
-  font-size: 14px;
+.form-item input,
+.form-input-datepicker {
   text-align: center;
-}
-
-
-
-/* 근무일수+휴무일 수 묶음 */
-.workoff-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px; /* 줄간격 */
-}
-
-/* 근무형태 별 근무+휴무일 수 row */
-.workoff-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: flex-start;
-}
-
-.workoff-row .form-item {
-  display: flex;
-  flex-direction: column;
-  min-width: 130px;
-  flex: 1 1 130px;
-}
-
-.workoff-row .form-item label {
-  font-size: 13px;
-  margin-bottom: 5px;
-  text-align: left; /* 왼쪽 정렬 */
-}
-
-.workoff-row .form-item input[type="text"] {
-  border: none;
-  border-bottom: 1px solid #ccc;
-  padding: 5px 8px;
+  padding: 3px;
+  width:30%;
+  border-bottom: 1px solid #dee2e6;
   font-size: 14px;
-  width: 100%; /* 가득 채우기 */
-  box-sizing: border-box;
+  transition: border-color 0.2s ease;
 }
 
-@media (max-width: 480px) {
+.form-item input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* 공휴일/시작일자 행 */
+.form-row.holiday-start-date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: end;
+}
+
+.form-label {
+  display: flex;
+  flex-direction: row;
+  /* gap: 8px; */
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-label label{
+  font-weight:700;
+}
+
+
+.form-label select{
+  padding:0;
+  float:left;
+}
+
+.form-input-datepicker {
+  padding: 3px !important;
+  border-bottom: 1px solid #e1e8ed;
+  font-size: 13px;
+  width: 40%;
+  cursor: pointer;
+  background-color: transparent;
+}
+
+input[type='date']{
+    position: relative;
+    padding-right: 10px;
+}
+
+
+input[type="date"]::-webkit-clear-button,
+input[type="date"]::-webkit-inner-spin-button { 
+  display: none;
+} 
+
+
+input[type='date']::-webkit-calendar-picker-indicator {
+  position:absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  color: transparent;
+}
+
+/* 버튼 스타일 */
+.modal_button_group {
+  margin-top: 8px;
+}
+.user-action-btn.secondary {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  flex: 1;
+  justify-content: center;
+  padding: 16px 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px #64748b1a;
+}
+
+.user-action-btn.secondary:hover {
+  background: #e2e8f0;
+  color: #475569;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(100, 116, 139, 0.15);
+}
+
+.user-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: none;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  justify-content: center;
+
+}
+
+
+@media (max-width: 600px) {
   .modal-content {
-    padding: 20px 10px;
-  }
-
-  .form-row {
-    flex-direction: column;
-  }
-
-  .form-row label{
-    justify-content: left;
+    width: 95%;
+    margin: 20px;
   }
   
+  .workoff-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .form-row.holiday-start-date-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+ 
 }
+
+/* CalDateModal 전용 스타일 */
+.date-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 1;
+  visibility: visible;
+}
+
+.date-modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  transform: translateY(0);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+
+.date-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.date-year-select {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.date-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  transition: all 0.2s ease;
+}
+
+
+.date-month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.date-month-btn {
+  background: none;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.date-month-btn:hover {
+  background: #2c3e50;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.date-month-btn.active {
+  background: #2c3e50;
+  color: white;
+  font-weight: 700;
+}
+
+.date-month-btn.active:hover {
+  transform: translateY(-2px);
+}
+
+.date-current-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+}
+
+/* 추가 애니메이션 효과 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
