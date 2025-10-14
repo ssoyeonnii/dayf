@@ -200,60 +200,6 @@ function Calendar() {
 
   return (
     <div className="calendar-container text-gray-900">
-      {/* 테스트: 구글 캘린더 이벤트 생성 버튼 */}
-      <div className="mg-b-16">
-        <button
-          className="form-action-btn"
-          onClick={async () => {
-            try {
-              const accessToken = sessionStorage.getItem('access_token');
-              if (!accessToken) {
-                alert('access_token이 없습니다. 구글 로그인부터 진행하세요.');
-                return;
-              }
-              const event = {
-                summary: '야간',
-                // location: 'Seoul, Korea',
-                description: 'dayf',
-                colorId : '9',
-                start: {
-                  dateTime: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-                },
-                end: {
-                  dateTime: new Date(Date.now() + 35 * 60 * 1000).toISOString(),
-                },
-                reminders: {
-                  useDefault: false,
-                  overrides: [
-                    { method: 'popup', minutes: 10 },
-                  ],
-                },
-              };
-              const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(event),
-              });
-              const data = await resp.json();
-              if (!resp.ok) {
-                console.error('Calendar insert failed', data);
-                alert('캘린더 이벤트 생성 실패: ' + (data.error?.message || resp.status));
-                return;
-              }
-              alert('이벤트 생성됨: ' + (data.htmlLink || '성공'));
-              if (data.htmlLink) window.open(data.htmlLink, '_blank');
-            } catch (e) {
-              console.error(e);
-              alert('이벤트 생성 중 오류가 발생했습니다.');
-            }
-          }}
-        >
-          테스트 이벤트 추가
-        </button>
-      </div>
       {isSettingsOpen && userSetConfig && (
         <SettingModal
           isOpen={isSettingsOpen}
