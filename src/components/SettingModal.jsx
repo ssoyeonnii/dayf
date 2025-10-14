@@ -87,29 +87,74 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
   const handleSave = async (e) => {
     e.preventDefault(); // 폼 제출 막기
 
-    // 교대근무 형태, 시작일자의 근무형태 값이 선택되어 있지 않을 경우
-    // 4조3교대 : 주간야간오후 근무일 값이 없을 때
-    // 이외 : 주간야간 근무일값이 없을 때
-    if (
-      shiftType == 1 ||
-      patternStartShift == "" ||
-      (shiftType == 4 && (!daywork || !nightwork || !eveningwork)) ||
-      (shiftType !== 4 && (!daywork || !nightwork))
-    ) {
-      alert("사용자 설정 값을 입력해주세요");
+    //유효성 검사
+    // 1. 교대근무 형태 체크
+    if (shiftType == 1 || !shiftType) {
+      alert("교대근무 형태를 선택해주세요");
       return;
     }
 
-    // 4조3교대 : 주간야간오후 휴무일 값이 없을 때
-    // 이외 : 주간야간 휴무일값이 없을 때
-    if (
-      (shiftType == 4 && (!dayoff || !nightoff || !eveningoff)) ||
-      (shiftType !== 4 && (!dayoff || !nightoff))
-    ) {
-      const proceed = confirm(
-        "휴무일에 값이 없습니다. 확인 버튼을 클릭하면 그대로 저장됩니다.\n저장하시겠습니까?"
-      );
-      if (!proceed) return;
+    // 2. 주간 근무일 수 체크
+    if (!daywork) {
+      alert("주간 근무일 수를 입력해주세요");
+      return;
+    }
+
+    // 3. 야간 근무일 수 체크
+    if (!nightwork) {
+      alert("야간 근무일 수를 입력해주세요");
+      return;
+    }
+
+    // 4. 4조3교대일 경우 오후 근무일 수 체크
+    if (shiftType == 4 && !eveningwork) {
+      alert("오후 근무일 수를 입력해주세요");
+      return;
+    }
+
+    // 5. 공휴일 휴무 여부 체크
+    if (!holidayOffYn) {
+      alert("공휴일 휴무 여부를 선택해주세요");
+      return;
+    }
+
+    // 6. 교대근무 시작일자 체크
+    if (!patternStartDate) {
+      alert("교대근무 시작일자를 선택해주세요");
+      return;
+    }
+
+    // 7. 시작일자의 근무형태 체크
+    if (!patternStartShift) {
+      alert("시작일자의 근무형태를 선택해주세요");
+      return;
+    }
+
+    // 8. 근무일 수, 휴무일 수 체크
+    if(daywork <=0 || nightwork <=0 || eveningwork <=0) {
+      alert("근무일 수는 0보다 큰 값을 입력해주세요");
+      return;
+    }
+    if(dayoff <0 || nightoff <0 || eveningoff <0) {
+      alert("휴무일 수는 0보다 작은 값을 입력할 수 없습니다");
+      return;
+    }
+
+    // 9. 휴무일 체크 (선택사항이므로 confirm으로 처리)
+    if (shiftType == 4) {
+      if (!dayoff || !nightoff || !eveningoff) {
+        const proceed = confirm(
+          "휴무일에 값이 없습니다. 확인 버튼을 클릭하면 그대로 저장됩니다.\n저장하시겠습니까?"
+        );
+        if (!proceed) return;
+      }
+    } else {
+      if (!dayoff || !nightoff) {
+        const proceed = confirm(
+          "휴무일에 값이 없습니다. 확인 버튼을 클릭하면 그대로 저장됩니다.\n저장하시겠습니까?"
+        );
+        if (!proceed) return;
+      }
     }
 
     // 1. 현재 입력값(state)을 기반으로 pattern 배열 구성
@@ -322,9 +367,6 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
                   )}
                 </select>
               </label>
-
-             
-
 
               <div className="modal_button_group">
                 <button type="submit" className="user-action-btn secondary">
