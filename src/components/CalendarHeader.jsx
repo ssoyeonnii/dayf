@@ -23,48 +23,15 @@ function CalendarHeader({
   const [isSettingsTooltipOpen, setIsSettingsTooltipOpen] = useState(false);
   const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
   const [googleEmail, setGoogleEmail] = useState(null);
- 
-  // DB에서 Google 이메일 조회
-  const fetchGoogleEmail = async (userId) => {
-    try {
-      const { supabase } = await import('./supabaseClient.jsx');
-      const { data, error } = await supabase
-        .from('work_users')
-        .select('google_email')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      if (!error && data?.google_email) {
-        setGoogleEmail(data.google_email);
-      } else {
-        // Fallback: Google 소셜 로그인인 경우 userId가 이메일
-        setGoogleEmail(userId);
-      }
-    } catch (e) {
-      console.error('Failed to fetch Google email:', e);
-      setGoogleEmail(userId);
-    }
-  };
 
   // 세션에서 로그인 정보 불러오기
   useEffect(() => {
     const storedUserName = sessionStorage.getItem("userName");
     const storedUserId = sessionStorage.getItem("userId");
-    const storedAccessToken = sessionStorage.getItem("access_token"); //google 연동 상태 구별
-    const storedGoogleEmail = sessionStorage.getItem("google_email"); //google 연동 상태 구별
 
     if (storedUserId && storedUserName) {
       setUserId(storedUserId);
       setUserName(storedUserName);
-      // Google Calendar 연동 상태 확인
-      // 1. Google 소셜 로그인 사용자 + access_token 있음
-      // 2. Dayf 회원가입 사용자 중 Google Calendar 연동 완료
-      if (storedAccessToken || storedGoogleEmail) {
-        setIsGoogleCalendarConnected(true);
-        
-        // Google 이메일 가져오기 (DB 조회)
-        fetchGoogleEmail(storedUserId);
-      }
     }
   }, []);
 
@@ -91,16 +58,10 @@ function CalendarHeader({
     const storedAccessToken = sessionStorage.getItem("access_token");
     const storedGoogleEmail = sessionStorage.getItem("google_email");
 
-    if (storedAccessToken || storedGoogleEmail) {
-      if (storedGoogleEmail) {
-        setIsGoogleCalendarConnected(true);
-        setGoogleEmail(storedGoogleEmail);
-      } else {
-        // 이메일이 없으면 미연동으로 간주
-        setIsGoogleCalendarConnected(false);
-        setGoogleEmail(null);
-      }
-    } else {
+    if ((storedAccessToken && storedGoogleEmail) || (storedAccessToken =="" && storedGoogleEmail)) {
+      setIsGoogleCalendarConnected(true);
+      setGoogleEmail(storedGoogleEmail);
+    } else if(storedAccessToken =="" && storedGoogleEmail =="") {
       setIsGoogleCalendarConnected(false);
       setGoogleEmail(null);
     }
@@ -221,15 +182,12 @@ function CalendarHeader({
     },
     onError: (error) => {
       // onError는 Google OAuth 팝업 자체의 실패 (사용자가 취소, 팝업 차단 등)
-
       console.error('Google 인증 실패:', error);
       
       // 에러 로그 저장 (동기적으로 처리)
       saveErrorLog('CalendarHeader', 'AUTH_FAILED', `Google 인증 실패: ${JSON.stringify(error)}`);
       
-      alert('Google 인증에 실패했습니다. 팝업 차단을 해제하고 다시 시도해주세요.');
-      
-      
+      alert('Google 인증에 실패했습니다.');
     },
   });
 
@@ -428,7 +386,8 @@ function CalendarHeader({
                     <span className="user-tooltip-name">{userName}님</span>
                   </div>
                   <div className="user-tooltip-actions">
-                    <button 
+                    {sessionStorage.getItem("googleuser") && (
+                      <button 
                       className="user-tooltip-btn primary" 
                       onClick={handleUserUpdate}
                     >
@@ -438,6 +397,9 @@ function CalendarHeader({
                       </svg>
                       회원정보 수정
                     </button>
+
+                    )}
+                    
                     <button 
                       className="user-tooltip-btn secondary" 
                       onClick={handleLogout}
