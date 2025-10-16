@@ -119,9 +119,12 @@ function CalendarHeader({
         if (result?.error) {
           if (result.error === 'EMAIL_IS_USERID') {
             const confirmed = confirm(
-              `선택하신 Google 계정(${result.conflictUserId})은 이미 Dayf 계정 ID로 등록되어 있습니다.\n\n` +
-              `이 Google 계정으로는 로그인할 수 없으며, 해당 계정의 근무 설정 값이 삭제됩니다.\n\n` +
-              `계속하시겠습니까?`
+              `선택하신 Google 계정(${result.conflictUserId})은 이미 Dayf 계정 ID로 등록되어 있습니다.\n` +
+              `연동 시 다음에 유의해주세요:\n` +
+              `• 해당 Google 계정이 현재 계정(${userId})에 연동됩니다.\n` +
+              `• 이후 해당 Google 계정으로는 직접 로그인할 수 없습니다.\n` +
+              `• 기존에 저장된 근무 설정이 모두 삭제됩니다.\n` +
+              `확인 버튼을 클릭하면 연동 완료됩니다.`
             );
             let errmsg = '';
             if (confirmed) {
@@ -205,16 +208,26 @@ function CalendarHeader({
   };
 
   // Google 연동 계정 변경 핸들러
-  const handleChangeGoogleAccount = () => {
-    // TODO: Google 계정 변경 로직 구현
-    alert("Google 계정 변경 기능을 구현 전");
-    setIsSettingsTooltipOpen(false);
+  const handleChangeGoogleAccount = async () => {
+    if(confirm("현재 연동된 Google Calendar에 Dayf가 등록한 일정이 모두 삭제됩니다.\n연동 계정을 변경하시겠습니까?")){
+      //TODO : Google Calendar의 dayf 일정 전체 삭제
+      //기존 연동 계정 해제 후 다른 google 계정 선택 위해 0Auth 인증 팝업 표시
+      await handleDisconnectGoogle(); //연동해제 핸들러 호출 후 완료되면(await)
+      connectGoogleCalendar(); //다른 google 계정 선택 위해 0Auth 인증 팝업 표시
+    }
+    
   };
 
   // Google 연동 해제 핸들러
-  const handleDisconnectGoogle = () => {
-    (async () => {
-      try {
+  const handleDisconnectGoogle = async () => {
+    // 사용자 확인 - 취소 시 함수 종료
+    if (!confirm("현재 연동된 Google Calendar에 Dayf가 등록한 일정이 모두 삭제됩니다.\n연동을 해제하시겠습니까?"
+    )) {
+      return;
+    }
+    //TODO : Google Calendar의 dayf 일정 전체 삭제
+
+    try {
         // DB에서도 Google 연동 정보 제거
         const res = await GoogleAccountManage.unlinkGoogleFromUser(userId);
         if (!res.success) {
@@ -240,7 +253,6 @@ function CalendarHeader({
 
         alert('연동 해제 중 오류가 발생했습니다.');
       }
-    })();
   };
 
   return (
