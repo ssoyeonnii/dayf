@@ -209,12 +209,10 @@ function CalendarHeader({
 
   // Google 연동 계정 변경 핸들러
   const handleChangeGoogleAccount = async () => {
-    if(confirm("현재 연동된 Google Calendar에 Dayf가 등록한 일정이 모두 삭제됩니다.\n연동 계정을 변경하시겠습니까?")){
       //TODO : Google Calendar의 dayf 일정 전체 삭제
       //기존 연동 계정 해제 후 다른 google 계정 선택 위해 0Auth 인증 팝업 표시
       await handleDisconnectGoogle(); //연동해제 핸들러 호출 후 완료되면(await)
       connectGoogleCalendar(); //다른 google 계정 선택 위해 0Auth 인증 팝업 표시
-    }
     
   };
 
