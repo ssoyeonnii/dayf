@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import GoogleAccountManage from "../services/googleAuthService.jsx";
 import CalDateModal from "./CalDateModal";
+import GoogleCalendarSyncModal from "./GoogleCalendarSyncModal";
 import "./CalendarHeader.css"; 
 
 function CalendarHeader({
@@ -23,6 +24,7 @@ function CalendarHeader({
   const [isSettingsTooltipOpen, setIsSettingsTooltipOpen] = useState(false);
   const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
   const [googleEmail, setGoogleEmail] = useState(null);
+  const [isGoogleSyncModalOpen, setIsGoogleSyncModalOpen] = useState(false);
 
   // 세션에서 로그인 정보 불러오기
   useEffect(() => {
@@ -202,9 +204,8 @@ function CalendarHeader({
 
   // Google Calendar 일정 등록 핸들러
   const handleSyncToGoogleCalendar = () => {
-    // TODO: Google Calendar 일정 등록 로직 구현
-    alert("Google Calendar 일정 등록 기능 구현 전");
     setIsSettingsTooltipOpen(false);
+    setIsGoogleSyncModalOpen(true);
   };
 
   // Google 연동 계정 변경 핸들러
@@ -461,9 +462,9 @@ function CalendarHeader({
 
         </div>
 
-<div style={{display:"flex"}}>
-  {/* 오늘 버튼 - 현재 표시 중인 월이 오늘이 있는 월이 아닐 때만 표시 */}
-  {(year !== currentYear || month !== currentMonth) && (
+    <div style={{display:"flex"}}>
+    {/* 오늘 버튼 - 현재 표시 중인 월이 오늘이 있는 월이 아닐 때만 표시 */}
+    {(year !== currentYear || month !== currentMonth) && (
             <button 
               onClick={onTodayClick}
               className="btn_today"
@@ -492,6 +493,13 @@ function CalendarHeader({
         onDateSelect={handleDateSelectModal}
         currentYear={year}
         currentMonth={month}
+      />
+
+      {/* Google Calendar Sync Modal 추가 */}
+      <GoogleCalendarSyncModal
+        isOpen={isGoogleSyncModalOpen}
+        onClose={() => setIsGoogleSyncModalOpen(false)}
+        userId={userId}
       />
     </div>
   );
