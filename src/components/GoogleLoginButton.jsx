@@ -90,7 +90,7 @@ const GoogleLoginButton = () => {
           <path d="M9 3.6c1.3 0 2.5.4 3.4 1.3L15 2.3A9 9 0 0 0 1 5l3 2.4a5.4 5.4 0 0 1 5-3.7z" fill="#EA4335"/>
         </g>
       </svg>
-      Google로 계속하기
+      Google로 시작하기
     </button>
   );
 };
