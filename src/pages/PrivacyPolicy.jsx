@@ -169,7 +169,7 @@ const PrivacyPolicy = () => {
       <div style={{ ...styles.p, padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '4px' }}>
         <strong>[개인정보 보호 책임자]</strong><br />
         이름 : 문소연<br />
-        소속/직책 : 개발자<br />
+        소속/직책 : 운영자<br />
         이메일 : soyeon5447@gmail.com<br />
       </div>
       <p style={styles.p}>
