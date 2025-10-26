@@ -604,9 +604,13 @@ const Index = () => {
                 서비스 시작하기
               </a>
             </div>
-            <p class="mg-t-40 text-gray-400 text-sm">
-              &copy; 2025 dayf. All rights reserved.
-            </p>
+            <div class="mg-t-40 text-gray-400 text-sm">
+              <div class="mb-4">
+                <a href="/privacy-policy" class="hover:text-white mr-4">개인정보처리방침</a>
+                <a href="/terms-of-service" class="hover:text-white">이용약관</a>
+              </div>
+              <p>&copy; 2025 dayf. All rights reserved.</p>
+            </div>
           </div>
         </footer>
       </div>
