@@ -237,7 +237,7 @@ function CalendarHeader({
         // 세션에서 access_token과 google_email 제거
         sessionStorage.removeItem('access_token');
         sessionStorage.removeItem('google_email');
-        sessionStorage.removeItem('googleuser');
+
 
         // 연동 상태 업데이트 (미연동 툴팁으로 전환)
         setIsGoogleCalendarConnected(false);
@@ -397,7 +397,7 @@ function CalendarHeader({
                     <span className="user-tooltip-name">{userName}님</span>
                   </div>
                   <div className="user-tooltip-actions">
-                    {sessionStorage.getItem("googleuser") && (
+                    {sessionStorage.getItem("googleuser") == 0 && (
                       <button 
                       className="user-tooltip-btn primary" 
                       onClick={handleUserUpdate}

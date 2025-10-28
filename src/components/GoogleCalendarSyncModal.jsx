@@ -335,6 +335,14 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     return { patternIndex: 0, dayInPattern: 0, isWorkDay: true };
   };
 
+  //YYYY-MM-DD 형식으로 포맷하는 헬퍼 함수
+  const formatAsDate = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   // 교대근무 패턴으로 Google Calendar 이벤트 생성
   const generateShiftEvents = async (start, end, config, googleEmail) => {
     const events = [];
@@ -376,12 +384,8 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     //야간이 교대근무시작형태라면  아래와 같이 패턴 순서 조정
     //['주간', '야간', '오후'] => ['야간', '오후', '주간']
 
-    // 기본 근무 시간 설정
-    const shiftTimes = {
-      주간: { start: "06:00", end: "14:00" },
-      오후: { start: "14:00", end: "22:00" },
-      야간: { start: "22:00", end: "06:00" }, // 다음날 06:00
-    };
+    // 근무일 판별을 위한 Set 객체
+    const workDayTypes = new Set(["주간", "야간", "오후"]);
 
     const startDateTime = new Date(start); //startDateTime : google calendar 등록할 일정의 시작일자
     startDateTime.setHours(0, 0, 0, 0);
@@ -412,31 +416,15 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
           if (current.getTime() > endDateTime.getTime()) break;
           
           const eventDate = new Date(current);
-          const times = shiftTimes[type];
 
-          if (times) {
-            let eventStart, eventEnd;
+          if (workDayTypes.has(type)) {
 
-            if (type === "야간") {
-              // 야간: 당일 22:00 ~ 다음날 06:00
-              eventStart = new Date(eventDate);
-              const [startHour, startMin] = times.start.split(":");
-              eventStart.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
+            const startDateObj = eventDate;
+            const endDateObj = new Date(startDateObj);
+            endDateObj.setDate(startDateObj.getDate() + 1); // Google API 규칙: 종료일 + 1일
 
-              eventEnd = new Date(eventDate);
-              eventEnd.setDate(eventEnd.getDate() + 1);
-              const [endHour, endMin] = times.end.split(":");
-              eventEnd.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
-            } else {
-              // 주간, 오후: 당일 시작 ~ 당일 종료
-              eventStart = new Date(eventDate);
-              const [startHour, startMin] = times.start.split(":");
-              eventStart.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
-
-              eventEnd = new Date(eventDate);
-              const [endHour, endMin] = times.end.split(":");
-              eventEnd.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
-            }
+            const startDateString = formatAsDate(startDateObj); // "YYYY-MM-DD"
+            const endDateString = formatAsDate(endDateObj);   // "YYYY-MM-DD" (다음날)
 
             // dayfEventId 생성: dayf-{gmailId}-yyyymmdd-{근무코드}-해시값
             const shiftCodeMap = {
@@ -446,7 +434,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
             };
             const shiftCode = shiftCodeMap[type] || 'shift';
             const dateStr = eventDate.toISOString().split('T')[0].replace(/-/g, '');
-            const hashInput = `${gmailId}-${dateStr}-${shiftCode}-${eventStart.getTime()}`;
+            const hashInput = `${gmailId}-${dateStr}-${shiftCode}-${eventDate.getTime()}`;
             const hash = generateHash(hashInput);
             const dayfEventId = `dayf-${gmailId}-${dateStr}-${shiftCode}-${hash}`;
 
@@ -456,12 +444,14 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
               summary: `[Dayf] ${type} 근무`,
               description: "Dayf에서 자동 등록된 교대근무 일정입니다.",
               start: {
-                dateTime: eventStart.toISOString(),
-                timeZone: "Asia/Seoul",
+                date: startDateString,
               },
               end: {
-                dateTime: eventEnd.toISOString(),
-                timeZone: "Asia/Seoul",
+                date: endDateString,
+              },
+              reminders: {
+                useDefault: false, // 사용자의 기본 알림 설정을 무시
+                overrides: []      // 명시적으로 알림이 없음을 나타내기 위해 빈 배열을 전달
               },
               colorId: type === "주간" ? "5" : type === "야간" ? "1" : "2",
               extendedProperties: {
@@ -543,29 +533,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
               </p>
             </div>
 
-            <div className="info-box" style={{ 
-              backgroundColor: "#f0f9ff", 
-              border: "1px solid #0ea5e9", 
-              borderRadius: "8px", 
-              padding: "16px",
-              margin: "20px 0"
-            }}>
-              <h4 style={{ margin: "0 0 10px 0", fontSize: "14px", fontWeight: "600" }}>
-                ℹ️ 근무 시간 안내
-              </h4>
-              <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                • 주간: 06:00 ~ 14:00
-              </p>
-              <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                • 오후: 14:00 ~ 22:00
-              </p>
-              <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                • 야간: 22:00 ~ 익일 06:00
-              </p>
-              <p style={{ margin: "10px 0 0 0", fontSize: "12px", color: "#666" }}>
-                * 위 시간으로 Google Calendar에 자동 등록됩니다.
-              </p>
-            </div>
+            
             <div className="modal_button_group">
             <button 
               className="user-action-btn secondary"
