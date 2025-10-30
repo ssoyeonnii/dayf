@@ -366,7 +366,7 @@ input[type='date']::-webkit-calendar-picker-indicator {
 
 /* GoogleCalendarSyncModal 스타일 */
 .modal-body {
-  padding: 20px 24px;
+  padding: 20px;
 }
 
 .form-group label {

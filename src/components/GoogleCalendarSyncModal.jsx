@@ -2,6 +2,13 @@ import React, { useState, useEffect } from "react";
 import "./Modal.css";
 import { supabase } from "./supabaseClient.jsx";
 
+const shiftCodeMap = {
+  '주간': 'day',
+  '야간': 'night',
+  '오후': 'evening'
+};
+
+
 function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
   const [startDate, setStartDate] = useState(""); //일정등록 시작일자
   const [endDate, setEndDate] = useState(""); //일정등록 종료일자
@@ -169,6 +176,50 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     }
   };
 
+  //Log_google_calendar_events 테이블에 구글캘린더의 일정 정보 저장하는 함수 추가
+  const saveEventToSupabase = async (eventData) => {
+    try {
+      const { data, error } = await supabase
+        .from('Log_google_calendar_events')
+        .insert([{
+          user_id: eventData.user_id,
+          dayf_event_id: eventData.dayf_event_id,
+          google_event_id: '', // 초기에는 빈 값
+          shift_type: eventData.shift_type,
+          event_date: eventData.event_date,
+          process_type: 1, //1:입력 2:삭제
+          status: 'pending' // 대기 중
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Supabase 저장 실패:", error);
+      throw error;
+    }
+  };
+
+  //Log_google_calendar_events 테이블에 google calendar 일정 등록 후 status 업데이트 함수
+  const updateEventStatus = async (dayf_event_id, google_event_id, status) => {
+    try {
+      const { error } = await supabase
+        .from('Log_google_calendar_events')
+        .update({
+          google_event_id: google_event_id,
+          process_type: status === 'success' ? 1 : null,
+          status: status
+        })
+        .eq('dayf_event_id', dayf_event_id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Supabase 업데이트 실패:", error);
+      throw error;
+    }
+  };
+
   // Google Calendar API에 일정 추가
   const addEventToGoogleCalendar = async (event) => {
     const accessToken = sessionStorage.getItem("access_token");
@@ -236,24 +287,84 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
             skipCount++;
             continue;
           }
-          
-          // skipDuplicate 필드 제거 후 전송
+             
+        let shiftType = 'day'; // 기본값
+        for (const [korean, english] of Object.entries(shiftCodeMap)) {
+          if (event.summary.includes(korean)) {
+            shiftType = english;
+            break;
+          }
+        }
+
+        // dayf_event_id 추출 (extendedProperties에서)
+        const dayfEventId = event.extendedProperties.private.dayfEventId;
+        
+        // event_date 추출 (start.date에서)
+        const eventDate = event.start.date;
+
+        // 1단계: Supabase에 먼저 저장 (pending 상태)
+        await saveEventToSupabase({
+          user_id: userId,
+          dayf_event_id: dayfEventId,
+          shift_type: shiftType,
+          event_date: eventDate
+        });
+
+        // 2단계: Google Calendar에 저장
+        // skipDuplicate 필드 제거 후 전송
           const { skipDuplicate, ...eventToSend } = event;
-          await addEventToGoogleCalendar(eventToSend);
+          const googleResponse = await addEventToGoogleCalendar(eventToSend);
+
+        // 3단계: 성공 시 Supabase 업데이트
+        await updateEventStatus(dayfEventId, googleResponse.id, 'success');
+
           successCount++;
         } catch (error) {
           console.error("일정 등록 실패:", error);
+          // 실패 시에도 Supabase에 실패 상태 업데이트 시도
+          try {
+            let shiftType = 'day';
+            for (const [korean, english] of Object.entries(shiftCodeMap)) {
+              if (event.summary.includes(korean)) {
+                shiftType = english;
+                break;
+              }
+            }
+            const dayfEventId = event.extendedProperties.private.dayfEventId;
+            const eventDate = event.start.date;
+
+            // Supabase에 레코드가 없으면 생성하고, 있으면 업데이트
+            const { data: existing } = await supabase
+              .from('Log_google_calendar_events')
+              .select('id')
+              .eq('dayf_event_id', dayfEventId)
+              .single();
+
+            if (!existing) {
+              // 레코드가 없으면 생성
+              await saveEventToSupabase({
+                user_id: userId,
+                dayf_event_id: dayfEventId,
+                shift_type: shiftType,
+                event_date: eventDate
+              });
+            }
+
+            // 실패 상태로 업데이트
+            await updateEventStatus(dayfEventId, '', 'failed');
+          } catch (updateError) {
+            console.error("실패 상태 업데이트 실패:", updateError);
+          }
+            
           failCount++;
         }
       }
 
       setIsLoading(false);
 
-      if (failCount === 0 && skipCount === 0) {
-        alert(`${successCount}개의 일정이 Google Calendar에 등록되었습니다!`);
-        
+      if (failCount === 0 && skipCount === 0) {        
         const goToCalendar = confirm(
-          "일정 등록이 완료되었습니다.\nGoogle Calendar로 이동하시겠습니까?"
+          `${successCount}개의 일정이 Google Calendar에 등록되었습니다!\nGoogle Calendar로 이동하시겠습니까?`
         );
         
         if (goToCalendar) {
@@ -427,11 +538,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
             const endDateString = formatAsDate(endDateObj);   // "YYYY-MM-DD" (다음날)
 
             // dayfEventId 생성: dayf-{gmailId}-yyyymmdd-{근무코드}-해시값
-            const shiftCodeMap = {
-              '주간': 'day',
-              '야간': 'night',
-              '오후': 'evening'
-            };
+            
             const shiftCode = shiftCodeMap[type] || 'shift';
             const dateStr = eventDate.toISOString().split('T')[0].replace(/-/g, '');
             const hashInput = `${gmailId}-${dateStr}-${shiftCode}-${eventDate.getTime()}`;
