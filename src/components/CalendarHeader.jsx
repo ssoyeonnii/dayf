@@ -347,7 +347,7 @@ function CalendarHeader({
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5l5-5m0 0l5 5m-5-5v12" 
                                   stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
-                          Google Calendar<br/>일정등록
+                          Google Calendar<br/>일정관리
                         </button>
                         <button 
                           className="user-tooltip-btn secondary" 

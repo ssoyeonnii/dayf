@@ -10,13 +10,20 @@ const shiftCodeMap = {
 
 
 function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
+  const [deleteMode, setDeleteMode] = useState(false); //등록/삭제 모드 전환 (false = 등록 모드, true = 삭제 모드)
   const [startDate, setStartDate] = useState(""); //일정등록 시작일자
   const [endDate, setEndDate] = useState(""); //일정등록 종료일자
+  const [deleteStartDate, setDeleteStartDate] = useState(""); //삭제용 시작일자
+  const [deleteEndDate, setDeleteEndDate] = useState(""); //삭제용 종료일자
   const [minDate, setMinDate] = useState(""); //일정등록 시작일자 최소값
   const [minEndDate, setMinEndDate] = useState(""); //일정등록 종료일자 최소값
   const [maxEndDate, setMaxEndDate] = useState(""); //일정등록 종료일자 최대값
   const [shiftConfig, setShiftConfig] = useState(null); //사용자 교대근무 설정
   const [isLoading, setIsLoading] = useState(false); //일정등록 버튼 클릭 후 로딩 상태
+  const [isDeleting, setIsDeleting] = useState(false); //삭제 진행 중 로딩 상태
+  const [deleteAll, setDeleteAll] = useState(false); //전체 삭제 여부 체크박스
+  const [previewEvents, setPreviewEvents] = useState([]); //삭제 대상 일정 미리보기 목록
+  const [showPreview, setShowPreview] = useState(false); //미리보기 표시 여부
 
   // Date를 YYYY-MM-DD 형식으로 변환
   const formatDate = (date) => {
@@ -123,6 +130,16 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     setEndDate(e.target.value);
   };
 
+  //삭제 기간 시작일자 변경 핸들러
+  const handleDeleteStartDateChange = (e) => {
+    setDeleteStartDate(e.target.value);
+  };
+
+  //삭제 기간 종료일자 변경 핸들러
+  const handleDeleteEndDateChange = (e) => {
+    setDeleteEndDate(e.target.value);
+  };
+
   // 해시 생성 함수
   const generateHash = (str) => {
     let hash = 0;
@@ -176,7 +193,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     }
   };
 
-  //Log_google_calendar_events 테이블에 구글캘린더의 일정 정보 저장하는 함수 추가
+  //Log_google_calendar_events 테이블에 구글캘린더의 일정 정보 저장하는 함수 (등록/삭제 통합)
   const saveEventToSupabase = async (eventData) => {
     try {
       const { data, error } = await supabase
@@ -184,11 +201,11 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         .insert([{
           user_id: eventData.user_id,
           dayf_event_id: eventData.dayf_event_id,
-          google_event_id: '', // 초기에는 빈 값
+          google_event_id: eventData.google_event_id || '', // 등록 시 빈 값, 삭제 시 실제 값
           shift_type: eventData.shift_type,
           event_date: eventData.event_date,
-          process_type: 1, //1:입력 2:삭제
-          status: 'pending' // 대기 중
+          process_type: eventData.process_type, // 1: 입력, 2: 삭제
+          status: eventData.status // 'pending', 'success', 'failed'
         }])
         .select()
         .single();
@@ -219,6 +236,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       throw error;
     }
   };
+
 
   // Google Calendar API에 일정 추가
   const addEventToGoogleCalendar = async (event) => {
@@ -306,8 +324,11 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         await saveEventToSupabase({
           user_id: userId,
           dayf_event_id: dayfEventId,
+          google_event_id: '', // 등록 시 초기에는 빈 값
           shift_type: shiftType,
-          event_date: eventDate
+          event_date: eventDate,
+          process_type: 1, // 1: 입력
+          status: 'pending' // 대기 중
         });
 
         // 2단계: Google Calendar에 저장
@@ -345,8 +366,11 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
               await saveEventToSupabase({
                 user_id: userId,
                 dayf_event_id: dayfEventId,
+                google_event_id: '', // 등록 시 초기에는 빈 값
                 shift_type: shiftType,
-                event_date: eventDate
+                event_date: eventDate,
+                process_type: 1, // 1: 입력
+                status: 'failed' // 실패 상태
               });
             }
 
@@ -402,6 +426,223 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       console.error("일정 등록 중 오류:", error);
       setIsLoading(false);
       alert(`일정 등록 중 오류가 발생했습니다.\n${error.message}`);
+    }
+  };
+
+  // 삭제 대상 미리보기 핸들러
+  const handlePreview = async () => {
+    try {
+      setIsDeleting(true);
+      setShowPreview(false);
+      const accessToken = sessionStorage.getItem("access_token");
+
+      if (!accessToken) {
+        alert("Google Calendar 연동이 필요합니다.");
+        setIsDeleting(false);
+        return;
+      }
+
+      let timeMin, timeMax;
+
+      if (deleteAll) {
+        // 전체 삭제 시 매우 넓은 범위 설정
+        timeMin = "2020-01-01T00:00:00Z";
+        timeMax = "2030-12-31T23:59:59Z";
+      } else {
+        // 날짜 범위가 설정된 경우
+        if (!deleteStartDate || !deleteEndDate) {
+          alert("삭제할 날짜 범위를 선택해주세요.");
+          setIsDeleting(false);
+          return;
+        }
+        timeMin = new Date(deleteStartDate).toISOString();
+        timeMax = new Date(deleteEndDate + "T23:59:59").toISOString();
+      }
+
+      // Google Calendar API를 통해 이벤트 조회
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&q=Dayf&singleEvents=true&orderBy=startTime`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Google Calendar 이벤트 조회 실패");
+      }
+
+      const data = await response.json();
+      // extendedProperties.private.dayfEventId로 Dayf 일정만 필터링
+      const dayfEvents = data.items.filter(event => {
+        const hasDayfEventId = event.extendedProperties?.private?.dayfEventId;
+        //? : Optional Chaining(옵셔널 체이닝) 연산자
+        //왼쪽 값이 null 또는 undefined면 평가를 멈추고 undefined를 반환
+        //값이 존재하면 dayfEventId 값 반환
+        const hasDayfSummary = event.summary && event.summary.includes("[Dayf]");
+        return hasDayfEventId || hasDayfSummary;
+      });
+
+      // 미리보기 데이터 포맷
+      const previewData = dayfEvents.map(event => ({
+        id: event.id,
+        summary: event.summary,
+        date: event.start.date || event.start.dateTime?.split('T')[0],
+        dayfEventId: event.extendedProperties?.private?.dayfEventId,
+      }));
+
+      setPreviewEvents(previewData);
+      setShowPreview(previewData.length > 0);
+
+      if (previewData.length === 0) {
+        alert("삭제할 Dayf 일정이 없습니다.");
+      }
+
+    } catch (error) {
+      console.error("미리보기 조회 중 오류:", error);
+      alert(`미리보기 조회 중 오류가 발생했습니다.\n${error.message}`);
+      setShowPreview(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // 일정 삭제 실행 핸들러
+  const handleDelete = async () => {
+    if (previewEvents.length === 0) {
+      alert("삭제할 일정이 없습니다.");
+      return;
+    }
+
+    const confirmMessage = deleteAll
+      ? `모든 Dayf 일정 ${previewEvents.length}개를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`
+      : `선택한 기간의 Dayf 일정 ${previewEvents.length}개를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      const accessToken = sessionStorage.getItem("access_token");
+
+      if (!accessToken) {
+        alert("Google Calendar 연동이 필요합니다.");
+        setIsDeleting(false);
+        return;
+      }
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // 각 이벤트를 순차적으로 삭제
+      for (const event of previewEvents) {
+        try {
+          const deleteResponse = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/primary/events/${event.id}`,
+            {
+              method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+
+          // shift_type 추출 (summary에서)
+          let shiftType = 'day'; // 기본값
+          for (const [korean, english] of Object.entries(shiftCodeMap)) {
+            if (event.summary && event.summary.includes(korean)) {
+              shiftType = english;
+              break;
+            }
+          }
+
+          if (deleteResponse.ok) {
+            successCount++;
+
+            // Supabase에 삭제 이벤트 정보 저장 (process_type = 2: 삭제)
+            try {
+              await saveEventToSupabase({
+                user_id: userId,
+                dayf_event_id: event.dayfEventId || null,
+                google_event_id: event.id,
+                shift_type: shiftType,
+                event_date: event.date,
+                process_type: 2, // 2: 삭제
+                status: 'success'
+              });
+            } catch (dbError) {
+              console.warn("DB 삭제 이벤트 저장 실패:", dbError);
+            }
+          } else {
+            failCount++;
+            console.error(`이벤트 삭제 실패: ${event.id}`);
+            
+            // 실패 시에도 Supabase에 삭제 이벤트 정보 저장
+            try {
+              await saveEventToSupabase({
+                user_id: userId,
+                dayf_event_id: event.dayfEventId || null,
+                google_event_id: event.id,
+                shift_type: shiftType,
+                event_date: event.date,
+                process_type: 2, // 2: 삭제
+                status: 'failed'
+              });
+            } catch (dbError) {
+              console.warn("DB 삭제 이벤트 저장 실패:", dbError);
+            }
+          }
+        } catch (eventError) {
+          failCount++;
+          console.error(`이벤트 삭제 오류: ${event.id}`, eventError);
+          
+          // 실패 시에도 Supabase에 삭제 이벤트 정보 저장
+          try {
+            // shift_type 추출 (summary에서)
+            let shiftType = 'day'; // 기본값
+            for (const [korean, english] of Object.entries(shiftCodeMap)) {
+              if (event.summary && event.summary.includes(korean)) {
+                shiftType = english;
+                break;
+              }
+            }
+
+            await saveEventToSupabase({
+              user_id: userId,
+              dayf_event_id: event.dayfEventId || null,
+              google_event_id: event.id,
+              shift_type: shiftType,
+              event_date: event.date,
+              process_type: 2, // 2: 삭제
+              status: 'failed'
+            });
+          } catch (dbError) {
+            console.warn("DB 삭제 이벤트 저장 실패:", dbError);
+          }
+        }
+      }
+
+      let message = `삭제 완료!\n성공: ${successCount}개`;
+      if (failCount > 0) {
+        message += `\n실패: ${failCount}개`;
+      }
+
+      alert(message);
+
+      // 미리보기 초기화
+      setPreviewEvents([]);
+      setShowPreview(false);
+      setDeleteStartDate("");
+      setDeleteEndDate("");
+      setDeleteAll(false);
+
+    } catch (error) {
+      console.error("일정 삭제 중 오류:", error);
+      alert(`일정 삭제 중 오류가 발생했습니다.\n${error.message}`);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -611,46 +852,157 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     <div className="modal" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Google Calendar 일정 등록</h2>
+          <h2>Google Calendar 일정 관리</h2>
+          <button className="modal_close" onClick={onClose}>
+            ×
+          </button>
+        </div>
+
+        {/* 모드 전환 탭 */}
+        <div className="modal-tabs">
+          <button
+            className={`modal-tab ${!deleteMode ? "active" : ""}`}
+            onClick={() => {
+              setDeleteMode(false);
+              // 삭제 모드 상태 초기화
+              setPreviewEvents([]);
+              setShowPreview(false);
+              setDeleteStartDate("");
+              setDeleteEndDate("");
+              setDeleteAll(false);
+            }}
+          >
+            일정 등록
+          </button>
+          <button
+            className={`modal-tab ${deleteMode ? "active" : ""}`}
+            onClick={() => {
+              setDeleteMode(true);
+              // 등록 모드 상태 초기화는 필요 없음 (등록 모드에서 유지)
+            }}
+          >
+            일정 삭제
+          </button>
         </div>
 
           <div className="modal-body">
-            <div className="form-group">
-              <label>일정 등록 기간</label>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                <input 
-                  type="date"
-                  className="form-input-datepicker"
-                  value={startDate}
-                  min={minDate}
-                  onChange={handleStartDateChange}
-                />
-                <span>~</span>
-                <input 
-                  type="date"
-                  className="form-input-datepicker"
-                  value={endDate}
-                  min={minEndDate}
-                  max={maxEndDate}
-                  onChange={handleEndDateChange}
-                />
-              </div>
-              <p className="helper-text" style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-                * 종료일은 시작일부터 최대 12개월까지 선택 가능합니다.
-              </p>
-            </div>
+            {!deleteMode ? (
+              // 일정 등록 모드
+              <>
+                <div className="form-group">
+                  <label>일정 등록 기간</label>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <input
+                      type="date"
+                      className="form-input-datepicker"
+                      value={startDate}
+                      min={minDate}
+                      onChange={handleStartDateChange}
+                    />
+                    <span>~</span>
+                    <input
+                      type="date"
+                      className="form-input-datepicker"
+                      value={endDate}
+                      min={minEndDate}
+                      max={maxEndDate}
+                      onChange={handleEndDateChange}
+                    />
+                  </div>
+                  <p className="helper-text" style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                    * 종료일은 시작일부터 최대 12개월까지 선택 가능합니다.
+                  </p>
+                </div>
 
-            
-            <div className="modal_button_group">
-            <button 
-              className="user-action-btn secondary"
-              onClick={handleSync}
-              disabled={isLoading || !startDate || !endDate}
-            >
-              {isLoading ? "등록 중..." : "Google Calendar에 추가"}
-            </button>
+                <div className="modal_button_group">
+                  <button
+                    className="user-action-btn secondary"
+                    onClick={handleSync}
+                    disabled={isLoading || !startDate || !endDate}
+                  >
+                    {isLoading ? "등록 중..." : "Google Calendar에 추가"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              // 일정 삭제 모드
+              <>
+                <div className="form-group">
+                  <label>삭제할 일정 기간</label>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <input
+                      type="date"
+                      className="form-input-datepicker"
+                      value={deleteStartDate}
+                      onChange={handleDeleteStartDateChange}
+                      disabled={deleteAll}
+                    />
+                    <span>~</span>
+                    <input
+                      type="date"
+                      className="form-input-datepicker"
+                      value={deleteEndDate}
+                      min={deleteStartDate}
+                      onChange={handleDeleteEndDateChange}
+                      disabled={deleteAll}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input
+                      type="checkbox"
+                      checked={deleteAll}
+                      onChange={(e) => {
+                        setDeleteAll(e.target.checked);
+                        if (e.target.checked) {
+                          setDeleteStartDate("");
+                          setDeleteEndDate("");
+                        }
+                      }}
+                    />
+                    전체 삭제 (날짜 범위 무시하고 모든 Dayf 일정 삭제)
+                  </label>
+                </div>
+
+                <div className="modal_button_group" style={{ display: "flex", gap: "10px" }}>
+                  <button
+                    className="user-action-btn secondary"
+                    onClick={handlePreview}
+                    disabled={isDeleting || (!deleteAll && (!deleteStartDate || !deleteEndDate))}
+                  >
+                    {isDeleting ? "조회 중..." : "삭제 대상 미리보기"}
+                  </button>
+                  {showPreview && previewEvents.length > 0 && (
+                    <button
+                      className="user-action-btn secondary"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      style={{ backgroundColor: "#dc3545", color: "white" }}
+                    >
+                      {isDeleting ? "삭제 중..." : "삭제 실행"}
+                    </button>
+                  )}
+                </div>
+
+                {/* 미리보기 목록 */}
+                {showPreview && previewEvents.length > 0 && (
+                  <div className="preview-section">
+                    <h4>삭제 대상 일정 ({previewEvents.length}개)</h4>
+                    <div className="preview-list">
+                      {previewEvents.map((event, index) => (
+                        <div key={index} className="preview-item">
+                          <span className="preview-date">{event.date}</span>
+                          <span className="preview-title">{event.summary}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-        </div>
       </div>
     </div>
   );

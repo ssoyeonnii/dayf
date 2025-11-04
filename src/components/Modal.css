@@ -381,3 +381,79 @@ input[type='date']::-webkit-calendar-picker-indicator {
   color: #666;
   font-size: 12px;
 }
+
+/* 모달 탭 스타일 */
+.modal-tabs {
+  display: flex;
+  background: #f8fafc;
+}
+
+.modal-tab {
+  flex: 1;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.modal-tab:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.modal-tab.active {
+  color: #2c3e50;
+  font-weight: 600;
+  background: white;
+}
+
+/* 미리보기 섹션 스타일 */
+.preview-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.preview-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.preview-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.preview-date {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.preview-title {
+  font-size: 13px;
+  color: #495057;
+  flex: 1;
+  margin-left: 12px;
+}
