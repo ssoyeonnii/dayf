@@ -132,13 +132,28 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
 
   //삭제 기간 시작일자 변경 핸들러
   const handleDeleteStartDateChange = (e) => {
+    if(previewEvents.length > 0) {
+      setShowPreview(false); //삭제 대상 미리보기가 있으면 미리보기 상태 false로 변경
+    }
     setDeleteStartDate(e.target.value);
   };
 
   //삭제 기간 종료일자 변경 핸들러
   const handleDeleteEndDateChange = (e) => {
+    if(previewEvents.length > 0) {
+      setShowPreview(false); //삭제 대상 미리보기가 있으면 미리보기 상태 false로 변경
+    }
     setDeleteEndDate(e.target.value);
   };
+
+  //전체 삭제 체크박스 변경 핸들러
+  const handleDeleteAllChange = (e) => {
+      setDeleteAll(e.target.checked);
+      setShowPreview(false);
+      setPreviewEvents([]);
+      setDeleteStartDate("");
+      setDeleteEndDate("");
+    }
 
   // 해시 생성 함수
   const generateHash = (str) => {
@@ -445,9 +460,15 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       let timeMin, timeMax;
 
       if (deleteAll) {
-        // 전체 삭제 시 매우 넓은 범위 설정
-        timeMin = "2020-01-01T00:00:00Z";
-        timeMax = "2030-12-31T23:59:59Z";
+        //오늘날짜로부터 +5년 -5년
+        const today = new Date();
+        const fiveYearsAgo = new Date(today);
+        fiveYearsAgo.setFullYear(today.getFullYear() - 5);
+        timeMin = fiveYearsAgo.toISOString();
+
+        const fiveYearsLater = new Date(today);
+        fiveYearsLater.setFullYear(today.getFullYear() + 5);
+        timeMax = fiveYearsLater.toISOString();
       } else {
         // 날짜 범위가 설정된 경우
         if (!deleteStartDate || !deleteEndDate) {
@@ -480,7 +501,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         //? : Optional Chaining(옵셔널 체이닝) 연산자
         //왼쪽 값이 null 또는 undefined면 평가를 멈추고 undefined를 반환
         //값이 존재하면 dayfEventId 값 반환
-        const hasDayfSummary = event.summary && event.summary.includes("[Dayf]");
+        const hasDayfSummary = event.summary && event.summary.includes("[Dayf]"); //summary에 [Dayf] 포함 여부도 체크
         return hasDayfEventId || hasDayfSummary;
       });
 
@@ -562,7 +583,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
             successCount++;
 
             // Supabase에 삭제 이벤트 정보 저장 (process_type = 2: 삭제)
-            try {
+            try {              
               await saveEventToSupabase({
                 user_id: userId,
                 dayf_event_id: event.dayfEventId || null,
@@ -954,19 +975,14 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
                     <input
                       type="checkbox"
                       checked={deleteAll}
-                      onChange={(e) => {
-                        setDeleteAll(e.target.checked);
-                        if (e.target.checked) {
-                          setDeleteStartDate("");
-                          setDeleteEndDate("");
-                        }
-                      }}
+                      onChange={handleDeleteAllChange}
                     />
                     전체 삭제 (날짜 범위 무시하고 모든 Dayf 일정 삭제)
                   </label>
                 </div>
 
                 <div className="modal_button_group" style={{ display: "flex", gap: "10px" }}>
+                  {!showPreview && (
                   <button
                     className="user-action-btn secondary"
                     onClick={handlePreview}
@@ -974,6 +990,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
                   >
                     {isDeleting ? "조회 중..." : "삭제 대상 미리보기"}
                   </button>
+                  )}
                   {showPreview && previewEvents.length > 0 && (
                     <button
                       className="user-action-btn secondary"
