@@ -33,6 +33,45 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     return `${year}-${month}-${day}`;
   };
 
+  // 시작일과 종료일 사이의 모든 월을 계산하는 함수 (Rate Limit 방지용)
+  const getMonthlyRanges = (startDate, endDate) => {
+    const ranges = [];
+    const start = new Date(startDate);
+    start.setDate(1); // 월의 첫날로 설정
+    start.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    let current = new Date(start);
+    
+    while (current <= end) {
+      const monthStart = new Date(current);
+      const monthEnd = new Date(current);
+      monthEnd.setMonth(monthEnd.getMonth() + 1);
+      monthEnd.setDate(0); // 해당 월의 마지막 날
+      monthEnd.setHours(23, 59, 59, 999);
+      
+      // 실제 시작일/종료일과 비교하여 범위 조정
+      const rangeStart = monthStart < new Date(startDate) ? new Date(startDate) : monthStart;
+      const rangeEnd = monthEnd > end ? end : monthEnd;
+      
+      ranges.push({
+        start: rangeStart,
+        end: rangeEnd,
+        monthLabel: `${rangeStart.getFullYear()}년 ${rangeStart.getMonth() + 1}월`
+      });
+      
+      // 다음 달로 이동
+      current.setMonth(current.getMonth() + 1);
+    }
+    
+    return ranges;
+  };
+
+  // 딜레이 함수 (Rate Limit 방지)
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   // 사용자 교대근무 설정 불러오기
   useEffect(() => {
     const fetchShiftConfig = async () => {
@@ -303,17 +342,29 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         return;
       }
 
-      // 교대근무 패턴으로 일정 생성
+      // 월별 범위 계산 (Rate Limit 방지)
       const startDateObj = new Date(startDate);
       const endDateObj = new Date(endDate);
-      const events = await generateShiftEvents(startDateObj, endDateObj, shiftConfig, googleEmail);
+      const monthlyRanges = getMonthlyRanges(startDateObj, endDateObj);
+      
+      let totalSuccessCount = 0;
+      let totalFailCount = 0;
+      let totalSkipCount = 0;
 
-      // Google Calendar에 일정 추가
-      let successCount = 0;
-      let failCount = 0;
-      let skipCount = 0;
+      // 각 월별로 처리
+      for (let i = 0; i < monthlyRanges.length; i++) {
+        const range = monthlyRanges[i];
+        
+        console.log(`처리 중: ${range.monthLabel}`);
 
-      for (const event of events) {
+        // 해당 월의 일정 생성
+        const events = await generateShiftEvents(range.start, range.end, shiftConfig, googleEmail);
+
+        let successCount = 0;
+        let failCount = 0;
+        let skipCount = 0;
+
+        for (const event of events) {
         try {
           // 중복 확인
           if (event.skipDuplicate) {
@@ -397,13 +448,23 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
             
           failCount++;
         }
+        }
+
+        totalSuccessCount += successCount;
+        totalFailCount += failCount;
+        totalSkipCount += skipCount;
+
+        // 마지막 월이 아니면 딜레이 추가 (Rate Limit 방지)
+        if (i < monthlyRanges.length - 1) {
+          await delay(500); // 0.5초 대기
+        }
       }
 
       setIsLoading(false);
 
-      if (failCount === 0 && skipCount === 0) {        
+      if (totalFailCount === 0 && totalSkipCount === 0) {        
         const goToCalendar = confirm(
-          `${successCount}개의 일정이 Google Calendar에 등록되었습니다!\nGoogle Calendar로 이동하시겠습니까?`
+          `${totalSuccessCount}개의 일정이 Google Calendar에 등록되었습니다!\nGoogle Calendar로 이동하시겠습니까?`
         );
         
         if (goToCalendar) {
@@ -412,23 +473,23 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         
         onClose();
       } else {
-        let message = `일정 등록 완료!\n성공: ${successCount}개`;
-        if (skipCount > 0) {
-          message += `\n중복 건너뜀: ${skipCount}개`;
+        let message = `일정 등록 완료!\n성공: ${totalSuccessCount}개`;
+        if (totalSkipCount > 0) {
+          message += `\n중복 건너뜀: ${totalSkipCount}개`;
         }
-        if (failCount > 0) {
-          message += `\n실패: ${failCount}개`;
+        if (totalFailCount > 0) {
+          message += `\n실패: ${totalFailCount}개`;
         }
         message += '\n\n';
-        if (skipCount > 0) {
+        if (totalSkipCount > 0) {
           message += '이미 교대근무 일정이 등록된 날짜는 건너뛰었습니다.\n';
         }
-        if (failCount > 0) {
+        if (totalFailCount > 0) {
           message += '실패한 일정은 다시 시도해주세요.';
         }
         alert(message);
         
-        if (successCount > 0) {
+        if (totalSuccessCount > 0) {
           const goToCalendar = confirm("Google Calendar로 이동하시겠습니까?");
           if (goToCalendar) {
             window.open("https://calendar.google.com", "_blank");
@@ -457,18 +518,17 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         return;
       }
 
-      let timeMin, timeMax;
+      let monthlyRanges = [];
 
       if (deleteAll) {
         //오늘날짜로부터 +5년 -5년
         const today = new Date();
         const fiveYearsAgo = new Date(today);
         fiveYearsAgo.setFullYear(today.getFullYear() - 5);
-        timeMin = fiveYearsAgo.toISOString();
-
         const fiveYearsLater = new Date(today);
         fiveYearsLater.setFullYear(today.getFullYear() + 5);
-        timeMax = fiveYearsLater.toISOString();
+        
+        monthlyRanges = getMonthlyRanges(fiveYearsAgo, fiveYearsLater);
       } else {
         // 날짜 범위가 설정된 경우
         if (!deleteStartDate || !deleteEndDate) {
@@ -476,37 +536,53 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
           setIsDeleting(false);
           return;
         }
-        timeMin = new Date(deleteStartDate).toISOString();
-        timeMax = new Date(deleteEndDate + "T23:59:59").toISOString();
+        const startDateObj = new Date(deleteStartDate);
+        const endDateObj = new Date(deleteEndDate + "T23:59:59");
+        monthlyRanges = getMonthlyRanges(startDateObj, endDateObj);
       }
 
-      // Google Calendar API를 통해 이벤트 조회
-      const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&q=Dayf&singleEvents=true&orderBy=startTime`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+      // 각 월별로 조회 (Rate Limit 방지)
+      let allDayfEvents = [];
+      
+      for (let i = 0; i < monthlyRanges.length; i++) {
+        const range = monthlyRanges[i];
+        const timeMin = range.start.toISOString();
+        const timeMax = range.end.toISOString();
+
+        const response = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&q=Dayf&singleEvents=true&orderBy=startTime`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Google Calendar 이벤트 조회 실패");
         }
-      );
 
-      if (!response.ok) {
-        throw new Error("Google Calendar 이벤트 조회 실패");
+        const data = await response.json();
+        // extendedProperties.private.dayfEventId로 Dayf 일정만 필터링
+        const dayfEvents = data.items.filter(event => {
+          const hasDayfEventId = event.extendedProperties?.private?.dayfEventId;
+          //? : Optional Chaining(옵셔널 체이닝) 연산자
+          //왼쪽 값이 null 또는 undefined면 평가를 멈추고 undefined를 반환
+          //값이 존재하면 dayfEventId 값 반환
+          const hasDayfSummary = event.summary && event.summary.includes("[Dayf]"); //summary에 [Dayf] 포함 여부도 체크
+          return hasDayfEventId || hasDayfSummary;
+        });
+
+        allDayfEvents = allDayfEvents.concat(dayfEvents);
+
+        // 마지막 월이 아니면 딜레이 추가 (Rate Limit 방지)
+        if (i < monthlyRanges.length - 1) {
+          await delay(300); // 0.3초 대기
+        }
       }
-
-      const data = await response.json();
-      // extendedProperties.private.dayfEventId로 Dayf 일정만 필터링
-      const dayfEvents = data.items.filter(event => {
-        const hasDayfEventId = event.extendedProperties?.private?.dayfEventId;
-        //? : Optional Chaining(옵셔널 체이닝) 연산자
-        //왼쪽 값이 null 또는 undefined면 평가를 멈추고 undefined를 반환
-        //값이 존재하면 dayfEventId 값 반환
-        const hasDayfSummary = event.summary && event.summary.includes("[Dayf]"); //summary에 [Dayf] 포함 여부도 체크
-        return hasDayfEventId || hasDayfSummary;
-      });
 
       // 미리보기 데이터 포맷
-      const previewData = dayfEvents.map(event => ({
+      const previewData = allDayfEvents.map(event => ({
         id: event.id,
         summary: event.summary,
         date: event.start.date || event.start.dateTime?.split('T')[0],
@@ -554,11 +630,25 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         return;
       }
 
-      let successCount = 0;
-      let failCount = 0;
+      // previewEvents를 월별로 그룹화 (Rate Limit 방지)
+      const eventsByMonth = {};
+      previewEvents.forEach(event => {
+        const monthKey = event.date ? event.date.substring(0, 7) : 'unknown'; // "YYYY-MM"
+        if (!eventsByMonth[monthKey]) {
+          eventsByMonth[monthKey] = [];
+        }
+        eventsByMonth[monthKey].push(event);
+      });
 
-      // 각 이벤트를 순차적으로 삭제
-      for (const event of previewEvents) {
+      let totalSuccessCount = 0;
+      let totalFailCount = 0;
+      const months = Object.keys(eventsByMonth).sort();
+
+      // 각 월별로 삭제 처리
+      for (let monthIndex = 0; monthIndex < months.length; monthIndex++) {
+        const monthEvents = eventsByMonth[months[monthIndex]];
+        
+        for (const event of monthEvents) {
         try {
           const deleteResponse = await fetch(
             `https://www.googleapis.com/calendar/v3/calendars/primary/events/${event.id}`,
@@ -580,7 +670,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
           }
 
           if (deleteResponse.ok) {
-            successCount++;
+            totalSuccessCount++;
 
             // Supabase에 삭제 이벤트 정보 저장 (process_type = 2: 삭제)
             try {              
@@ -597,7 +687,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
               console.warn("DB 삭제 이벤트 저장 실패:", dbError);
             }
           } else {
-            failCount++;
+            totalFailCount++;
             console.error(`이벤트 삭제 실패: ${event.id}`);
             
             // 실패 시에도 Supabase에 삭제 이벤트 정보 저장
@@ -616,7 +706,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
             }
           }
         } catch (eventError) {
-          failCount++;
+          totalFailCount++;
           console.error(`이벤트 삭제 오류: ${event.id}`, eventError);
           
           // 실패 시에도 Supabase에 삭제 이벤트 정보 저장
@@ -643,11 +733,17 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
             console.warn("DB 삭제 이벤트 저장 실패:", dbError);
           }
         }
+        }
+
+        // 마지막 월이 아니면 딜레이 추가 (Rate Limit 방지)
+        if (monthIndex < months.length - 1) {
+          await delay(500); // 0.5초 대기
+        }
       }
 
-      let message = `삭제 완료!\n성공: ${successCount}개`;
-      if (failCount > 0) {
-        message += `\n실패: ${failCount}개`;
+      let message = `삭제 완료!\n성공: ${totalSuccessCount}개`;
+      if (totalFailCount > 0) {
+        message += `\n실패: ${totalFailCount}개`;
       }
 
       alert(message);
