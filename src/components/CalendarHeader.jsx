@@ -5,6 +5,7 @@ import GoogleAccountManage from "../services/googleAuthService.jsx";
 import CalDateModal from "./CalDateModal";
 import GoogleCalendarSyncModal from "./GoogleCalendarSyncModal";
 import "./CalendarHeader.css"; 
+import { supabase } from "./supabaseClient.jsx"; //구글 연동 정보 체크 필요
 
 function CalendarHeader({
   year,
@@ -26,7 +27,7 @@ function CalendarHeader({
   const [googleEmail, setGoogleEmail] = useState(null);
   const [isGoogleSyncModalOpen, setIsGoogleSyncModalOpen] = useState(false);
 
-  // 세션에서 로그인 정보 불러오기
+  // 세션에서 로그인 정보 불러오기 및 Google 연동 상태 확인
   useEffect(() => {
     const storedUserName = sessionStorage.getItem("userName");
     const storedUserId = sessionStorage.getItem("userId");
@@ -34,6 +35,75 @@ function CalendarHeader({
     if (storedUserId && storedUserName) {
       setUserId(storedUserId);
       setUserName(storedUserName);
+      
+      // Google 연동 상태 확인 (sessionStorage 우선 확인)
+      const storedGoogleEmail = sessionStorage.getItem("google_email");
+      const storedAccessToken = sessionStorage.getItem("access_token");
+
+      // 1순위: sessionStorage에 google_email이 있으면 연동된 것으로 판단 (DB 조회 불필요)
+      if (storedGoogleEmail) {
+        setIsGoogleCalendarConnected(true);
+        setGoogleEmail(storedGoogleEmail);
+      } 
+      // 2순위: google_email은 없지만 access_token이 있으면 연동된 것으로 판단
+      else if (storedAccessToken) {
+        setIsGoogleCalendarConnected(true);
+        // access_token은 있지만 google_email이 없는 경우 DB에서 조회
+        const checkGoogleEmailFromDB = async () => {
+          try {
+            const { data, error } = await supabase
+              .from("work_users")
+              .select("google_email")
+              .eq("user_id", storedUserId)
+              .maybeSingle();
+
+            if (!error && data && data.google_email) {
+              setGoogleEmail(data.google_email);
+              sessionStorage.setItem("google_email", data.google_email);
+            }
+          } catch (error) {
+            console.error("Google email 조회 오류:", error);
+          }
+        };
+        checkGoogleEmailFromDB();
+      }
+      // 3순위: 둘 다 없으면 DB에서 연동 정보 확인
+      else {
+        const checkGoogleConnection = async () => {
+          try {
+            const { data, error } = await supabase
+              .from("work_users")
+              .select("google_sub, google_email")
+              .eq("user_id", storedUserId)
+              .maybeSingle();
+
+            if (error) {
+              console.error("Google 연동 상태 조회 오류:", error);
+              setIsGoogleCalendarConnected(false);
+              setGoogleEmail(null);
+              return;
+            }
+
+            // DB에 google_sub 또는 google_email이 있으면 연동된 것으로 판단
+            if (data && (data.google_sub || data.google_email)) {
+              setIsGoogleCalendarConnected(true);
+              if (data.google_email) {
+                setGoogleEmail(data.google_email);
+                sessionStorage.setItem("google_email", data.google_email);
+              }
+            } else {
+              setIsGoogleCalendarConnected(false);
+              setGoogleEmail(null);
+            }
+          } catch (error) {
+            console.error("Google 연동 상태 확인 중 오류:", error);
+            setIsGoogleCalendarConnected(false);
+            setGoogleEmail(null);
+          }
+        };
+
+        checkGoogleConnection();
+      }
     }
   }, []);
 
@@ -56,17 +126,19 @@ function CalendarHeader({
 
   // 설정 툴팁 핸들러
   const handleSettingsTooltipToggle = () => {
-    // 설정 툴팁 열 때마다 최신 연동 상태 확인 (access_token 기준)
+    // 설정 툴팁 열 때는 이미 저장된 상태만 사용 (DB 조회 없음)
+    // 초기 useEffect에서 이미 DB 조회를 통해 상태를 설정했으므로
+    // 추가 조회 없이 현재 state를 그대로 사용
+    // 단, 방금 연동한 경우를 대비해 sessionStorage에 access_token이 있으면 상태 업데이트
     const storedAccessToken = sessionStorage.getItem("access_token");
     const storedGoogleEmail = sessionStorage.getItem("google_email");
-
-    if ((storedAccessToken && storedGoogleEmail) || (storedAccessToken =="" && storedGoogleEmail)) {
+    
+    if (storedAccessToken && storedGoogleEmail && !isGoogleCalendarConnected) {
+      // 방금 연동한 경우 (state는 아직 업데이트 안됨)
       setIsGoogleCalendarConnected(true);
       setGoogleEmail(storedGoogleEmail);
-    } else if(storedAccessToken =="" && storedGoogleEmail =="") {
-      setIsGoogleCalendarConnected(false);
-      setGoogleEmail(null);
     }
+
     setIsSettingsTooltipOpen(!isSettingsTooltipOpen);
     setIsUserTooltipOpen(false); // 다른 툴팁 닫기
   };
