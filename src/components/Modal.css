@@ -216,12 +216,6 @@ input[type='date']::-webkit-calendar-picker-indicator {
   box-shadow: 0 4px 12px #64748b1a;
 }
 
-.user-action-btn.secondary:hover {
-  background: #e2e8f0;
-  color: #475569;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(100, 116, 139, 0.15);
-}
 
 .user-action-btn {
   display: flex;
@@ -242,8 +236,16 @@ input[type='date']::-webkit-calendar-picker-indicator {
 .user-action-btn.secondary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
+/*disabled 아닐 때만 hover 효과*/
+.user-action-btn.secondary:not(:disabled):hover {
+  background: #e2e8f0;
+  color: #475569;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(100, 116, 139, 0.15);
+}
 
 @media (max-width: 600px) {
   .modal-content {

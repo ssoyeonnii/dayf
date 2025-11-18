@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./Modal.css";
 import { supabase } from "./supabaseClient.jsx";
 import { GoogleAccountManage } from "../services/googleAuthService.jsx";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const { saveErrorLog } = GoogleAccountManage;
 
@@ -27,6 +28,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
   const [deleteAll, setDeleteAll] = useState(false); //전체 삭제 여부 체크박스
   const [previewEvents, setPreviewEvents] = useState([]); //삭제 대상 일정 미리보기 목록
   const [showPreview, setShowPreview] = useState(false); //미리보기 표시 여부
+  const pendingSyncRef = useRef(false); // 재인증 후 일정 등록을 계속할지 여부
 
   // Date를 YYYY-MM-DD 형식으로 변환
   const formatDate = (date) => {
@@ -282,7 +284,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         .from('Log_google_calendar_events')
         .update({
           google_event_id: google_event_id,
-          process_type: status === 'success' ? 1 : null,
+          process_type: status === 'success' ? 1 : 1,// 실패해도 process_type은 1 유지
           status: status
         })
         .eq('dayf_event_id', dayf_event_id);
@@ -322,6 +324,75 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     return await response.json();
   };
 
+  // Google 재인증 핸들러
+  const reconnectGoogle = useGoogleLogin({
+    flow: 'implicit',
+    scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
+    prompt: 'consent',
+    overrideScope: true,
+    onSuccess: async ({ access_token }) => {
+      try {
+        if (!access_token) {
+          alert('Google 액세스 토큰을 받지 못했습니다.');
+          await saveErrorLog(
+            'GoogleCalendarSyncModal',
+            'REAUTH_NO_TOKEN',
+            '재인증 시도했지만 access_token을 받지 못함',
+            userId
+          );
+          return;
+        }
+
+        // DB에 연동 정보 업데이트
+        const result = await GoogleAccountManage.linkGoogleToCurrentUser(userId, access_token);
+        
+        if (result?.error) {
+          alert(`재인증 오류: ${result.message || result.error}`);
+          await saveErrorLog(
+            'GoogleCalendarSyncModal',
+            'REAUTH_ERROR',
+            `재인증 오류: ${result.error} - ${result.message}`,
+            userId
+          );
+          return;
+        }
+
+        // sessionStorage에 access_token 저장
+        sessionStorage.setItem('access_token', access_token);
+        if (result.google_email) {
+          sessionStorage.setItem('google_email', result.google_email);
+        }
+
+        // 재인증 성공 후 일정 등록 자동 계속
+        if (pendingSyncRef.current) {
+          pendingSyncRef.current = false;
+          await handleSync(); // 재귀 호출로 일정 등록 재시도
+        } else {
+          alert('Google Calendar 재인증이 완료되었습니다!');
+        }
+      } catch (e) {
+        console.error('Google 재인증 중 오류:', e);
+        await saveErrorLog(
+          'GoogleCalendarSyncModal',
+          'REAUTH_EXCEPTION',
+          `재인증 중 오류: ${e.message}`,
+          userId
+        );
+        alert('재인증 중 오류가 발생했습니다.');
+      }
+    },
+    onError: (error) => {
+      console.error('Google 재인증 실패:', error);
+      saveErrorLog(
+        'GoogleCalendarSyncModal',
+        'REAUTH_FAILED',
+        `재인증 실패: ${JSON.stringify(error)}`,
+        userId
+      );
+      alert('Google 재인증에 실패했습니다.');
+    },
+  });
+
   // 교대근무 일정 생성 및 Google Calendar에 등록
   const handleSync = async () => {
     if (!startDate || !endDate) {
@@ -334,11 +405,41 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       return;
     }
 
+    // access_token 확인
+    const accessToken = sessionStorage.getItem("access_token");
+    const googleEmail = sessionStorage.getItem("google_email");
+    
+    if (!accessToken) {
+      // google_email이 있으면 이미 연동된 상태이므로 재인증 필요
+      if (googleEmail) {
+        const shouldReauth = confirm(
+          "Google 계정 연동 인증이 만료되었습니다.\n" +
+          "재인증 후 일정 등록이 자동으로 진행됩니다.\n\n" +
+          "재인증하시겠습니까?"
+        );
+        
+        if (shouldReauth) {
+          pendingSyncRef.current = true; // 재인증 후 일정 등록 계속
+          reconnectGoogle(); // 재인증 시작
+        }
+        return;
+      } else {
+        // 연동 자체가 안된 경우
+        alert("Google Calendar 연동이 필요합니다.\n설정에서 Google Calendar를 연동해주세요.");
+        await saveErrorLog(
+          'GoogleCalendarSyncModal',
+          'MISSING_ACCESS_TOKEN',
+          '일정 등록 시도 시 access_token이 없음 (연동도 안됨)',
+          userId
+        );
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
-      // 사용자 Gmail 계정 가져오기
-      const googleEmail = sessionStorage.getItem("google_email");
+      // 사용자 Gmail 계정 가져오기 (이미 위에서 선언됨)
       if (!googleEmail) {
         alert("Google 계정 정보를 찾을 수 없습니다.");
         setIsLoading(false);
@@ -412,6 +513,19 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
             successCount++;
           } catch (error) {
             console.error("일정 등록 실패:", error);
+
+            //일정 등록 실패 에러 로그 저장
+            try {
+              await saveErrorLog(
+                'GoogleCalendarSyncModal',
+                'EVENT_REGISTRATION_FAILED',
+                `일정 등록 실패: ${error.message || error.toString()}`,
+                userId
+              );
+            } catch (logError) {
+              console.error("에러 로그 저장 실패:", logError);
+            }
+
             // 실패 시에도 Supabase에 실패 상태 업데이트 시도
             try {
               let shiftType = 'day';
@@ -506,12 +620,12 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         
         onClose();
       } else {
-        let message = `일정 등록 완료!\n성공: ${totalSuccessCount}개`;
+        let message = `알정 등록 성공: ${totalSuccessCount}개`;
         if (totalSkipCount > 0) {
           message += `\n중복 건너뜀: ${totalSkipCount}개`;
         }
         if (totalFailCount > 0) {
-          message += `\n실패: ${totalFailCount}개`;
+          message += `\n일정 등록 실패: ${totalFailCount}개`;
         }
         message += '\n\n';
         if (totalSkipCount > 0) {
@@ -534,6 +648,19 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     } catch (error) {
       console.error("일정 등록 중 오류:", error);
       setIsLoading(false);
+
+      // 일정 등록 프로세스 오류 에러 로그 저장
+      try {
+        await saveErrorLog(
+          'GoogleCalendarSyncModal',
+          'SYNC_PROCESS_ERROR',
+          `일정 등록 프로세스 오류: ${error.message || error.toString()}`,
+          userId
+        );
+      } catch (logError) {
+        console.error("에러 로그 저장 실패:", logError);
+      }
+      
       alert(`일정 등록 중 오류가 발생했습니다.\n${error.message}`);
     }
   };
@@ -1088,6 +1215,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
               setDeleteEndDate("");
               setDeleteAll(false);
             }}
+            disabled={isLoading || isDeleting} //일정 등록 탭에서 등록 중 상태이면 다른 탭으로 이동 불가
           >
             일정 등록
           </button>
@@ -1097,6 +1225,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
               setDeleteMode(true);
               // 등록 모드 상태 초기화는 필요 없음 (등록 모드에서 유지)
             }}
+            disabled={isLoading || isDeleting} //일정 삭제 탭에서 삭제 중 상태이면 다른 탭으로 이동 불가
           >
             일정 삭제
           </button>

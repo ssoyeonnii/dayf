@@ -269,6 +269,16 @@ function CalendarHeader({
   });
 
   const handleGoogleCalendarConnect = () => {
+    const shouldConnect = confirm(
+      "[Google Calendar 연동 안내]\n" +
+      "서비스 재로그인 시 Google 계정 재인증이 필요할 수 있습니다.\n" +
+      "(빠른 시일 내 개선 예정입니다.)\n" +
+      "확인 버튼을 클릭하시면 Google Calendar 연동이 진행됩니다."
+    );
+
+    if (!shouldConnect) {
+      return; // 사용자가 취소하면 연동 중단
+    }
     // access_token 초기화 후 연동 시작
     sessionStorage.removeItem('access_token');
     connectGoogleCalendar();
@@ -296,7 +306,6 @@ function CalendarHeader({
     )) {
       return;
     }
-    //TODO : Google Calendar의 dayf 일정 전체 삭제
 
     try {
         // DB에서도 Google 연동 정보 제거
