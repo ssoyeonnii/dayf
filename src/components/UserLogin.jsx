@@ -13,7 +13,9 @@ function UserLogin() {
   const navigate = useNavigate();
 
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e?.preventDefault(); // form submit 기본 동작 방지
+
     if (!userid || !userpw) {
       alert("아이디와 비밀번호를 모두 입력해주세요.");
       return;
@@ -57,31 +59,34 @@ function UserLogin() {
 
   return (
     <div className="form-container text-gray-900">
-      <div className="form-group">
-        <label>ID</label>
-        <input
-          type="text"
-          value={userid}
-          onChange={(e) => setUserid(e.target.value)}
-        />
-      </div>
+      <form onSubmit={handleLogin}>
+        <div className="form-group">
+          <label>ID</label>
+          <input
+            type="text"
+            value={userid}
+            onChange={(e) => setUserid(e.target.value)}
+          />
+        </div>
 
-      <div className="form-group">
-        <label>비밀번호</label>
-        <input
-          type="password"
-          value={userpw}
-          onChange={(e) => setUserpw(e.target.value)}
-        />
-      </div>
+        <div className="form-group">
+          <label>비밀번호</label>
+          <input
+            type="password"
+            autoComplete="off"
+            value={userpw}
+            onChange={(e) => setUserpw(e.target.value)}
+          />
+        </div>
 
-      {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
+        {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
 
-      <div className="mg-t-24 mg-b-24">
-        <button onClick={handleLogin} className="form-action-btn">
-          로그인
-        </button>
-      </div>
+        <div className="mg-t-24 mg-b-24">
+          <button type="submit" className="form-action-btn">
+            로그인
+          </button>
+        </div>
+      </form>
 
       <div className="mg-t-24 mg-b-24">
         <GoogleLoginButton />

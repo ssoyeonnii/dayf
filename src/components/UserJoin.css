@@ -9,6 +9,12 @@
     border-radius: 8px;
     box-shadow: rgba(34, 126, 255, 0.1) 0px 3px 10px 0px;
   }
+
+  .form-container form {
+    margin: 0;
+    padding: 0;
+    display: contents; /* form을 투명하게 만듦 */
+  }
   
   .form-group {
     margin-bottom: 50px;
@@ -32,6 +38,7 @@
   .form-group input{
     border:0px;
     border-bottom: 1px solid #000;
+    color: #000;
   }
   
   .input-button-wrapper button {
