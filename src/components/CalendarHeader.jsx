@@ -292,32 +292,36 @@ function CalendarHeader({
 
   // Google 연동 계정 변경 핸들러
   const handleChangeGoogleAccount = async () => {
-      //TODO : Google Calendar의 dayf 일정 전체 삭제
-      //기존 연동 계정 해제 후 다른 google 계정 선택 위해 0Auth 인증 팝업 표시
-      await handleDisconnectGoogle(); //연동해제 핸들러 호출 후 완료되면(await)
-      connectGoogleCalendar(); //다른 google 계정 선택 위해 0Auth 인증 팝업 표시
+    // 기존 연동 계정 해제 후 다른 google 계정 선택 위해 OAuth 인증 팝업 표시
+    const disconnected = await handleDisconnectGoogle();
     
+    // 연동 해제가 성공했을 때만 새 계정 연동 진행
+    if (disconnected) {
+      connectGoogleCalendar(); // 다른 google 계정 선택 위해 OAuth 인증 팝업 표시
+    }
   };
 
   // Google 연동 해제 핸들러
   const handleDisconnectGoogle = async () => {
-    // 사용자 확인 - 취소 시 함수 종료
-    if (!confirm("현재 연동된 Google Calendar에 Dayf가 등록한 일정이 모두 삭제됩니다.\n연동을 해제하시겠습니까?"
+    if (!confirm(
+      "Google Calendar 연동을 해제하시겠습니까?\n" +
+      "Dayf에서 등록한 일정이 연동된 Google Calendar에 남아 있을 수 있습니다.\n" +
+      "필요시 'Google Calendar일정 관리'에서 삭제해주세요."
     )) {
-      return;
+      return false;
     }
 
-    try {
+    try {    
+        // 세션에서 access_token과 google_email 제거
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('google_email');
+
         // DB에서도 Google 연동 정보 제거
         const res = await GoogleAccountManage.unlinkGoogleFromUser(userId);
         if (!res.success) {
           alert('연동 해제 중 DB 오류가 발생했습니다.');
-          return;
+          return false;
         }
-
-        // 세션에서 access_token과 google_email 제거
-        sessionStorage.removeItem('access_token');
-        sessionStorage.removeItem('google_email');
 
 
         // 연동 상태 업데이트 (미연동 툴팁으로 전환)
@@ -326,12 +330,14 @@ function CalendarHeader({
         setIsSettingsTooltipOpen(false);
 
         alert('Google Calendar 연동이 해제되었습니다.');
+        return true;
       } catch (e) {
         console.error('Disconnect failed:', e);
         // 에러 로그 저장
         await saveErrorLog('CalendarHeader', 'EXCEPTION', `Google Calendar 연동 해제 중 오류: ${e.message}`);
 
         alert('연동 해제 중 오류가 발생했습니다.');
+        return false;
       }
   };
 
