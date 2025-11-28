@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { supabase } from "./supabaseClient.jsx";
 import bcrypt from "bcryptjs";
 import { useNavigate,useParams } from "react-router-dom";
+import { removeStoredGoogleToken } from "../services/googleTokenService.js";
 
 function DeleteAccount() {
  const { userId } = useParams();
@@ -76,6 +77,12 @@ function DeleteAccount() {
       if (deleteError) {
         alert("회원 탈퇴 실패: " + deleteError.message);
       } else {
+        try {
+          await removeStoredGoogleToken(userId);
+        } catch (tokenErr) {
+          console.error("Failed to delete encrypted Google token", tokenErr);
+        }
+
         alert("회원 탈퇴가 완료되었습니다.");
         sessionStorage.removeItem("userId");
         sessionStorage.removeItem("userName");
