@@ -3,7 +3,6 @@ import "./Modal.css";
 import { supabase } from "./supabaseClient.jsx";
 import { GoogleAccountManage } from "../services/googleAuthService.jsx";
 import { useGoogleLogin } from "@react-oauth/google";
-import { persistGoogleToken } from "../services/googleTokenService.js";
 
 const { saveErrorLog } = GoogleAccountManage;
 
@@ -238,21 +237,12 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       if (!response.ok) return false;
 
       const data = await response.json();
-      const shiftKeywords = [
-        '주간', '주간근무', '주간 근무',
-        '야간', '야간근무', '야간 근무',
-        '오후', '오후근무', '오후 근무',
-        'shift', 'day shift', 'night shift', 'evening shift'
-      ];
-
-      const normalize = (str = '') => str.replace(/\s+/g, '').toLowerCase();
-      const normalizedKeywords = shiftKeywords.map(normalize);        
+      const shiftKeywords = ['주간', '야간', '오후', '주간근무', '야간근무', '오후근무', 'shift'];
       
       // 해당 날짜에 교대근무 관련 키워드가 포함된 일정이 있는지 확인
       const hasShiftEvent = data.items?.some(item => {
-        const summary = item.summary || '';
-        const normalizedSummary = normalize(summary);
-        return normalizedKeywords.some(keyword => normalizedSummary.includes(keyword));
+        const summary = item.summary?.toLowerCase() || '';
+        return shiftKeywords.some(keyword => summary.includes(keyword.toLowerCase()));
       });
 
       return hasShiftEvent;
@@ -340,7 +330,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
     prompt: 'consent',
     overrideScope: true,
-    onSuccess: async ({ access_token, expires_in }) => {
+    onSuccess: async ({ access_token }) => {
       try {
         if (!access_token) {
           alert('Google 액세스 토큰을 받지 못했습니다.');
@@ -371,22 +361,6 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         sessionStorage.setItem('access_token', access_token);
         if (result.google_email) {
           sessionStorage.setItem('google_email', result.google_email);
-        }
-
-        try {
-          await persistGoogleToken({
-            userId,
-            accessToken: access_token,
-            expiresIn: typeof expires_in === "number" ? expires_in : undefined,
-          });
-        } catch (persistError) {
-          console.error("Failed to persist Google token", persistError);
-          await saveErrorLog(
-            'GoogleCalendarSyncModal',
-            'TOKEN_PERSIST_FAILED',
-            persistError.message,
-            userId
-          );
         }
 
         // 재인증 성공 후 일정 등록 자동 계속
@@ -422,12 +396,12 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
   // 교대근무 일정 생성 및 Google Calendar에 등록
   const handleSync = async () => {
     if (!startDate || !endDate) {
-      alert("시작일과 종료일을 모두 선택해주세요.\n(Please select both start and end dates.)");
+      alert("시작일과 종료일을 모두 선택해주세요.");
       return;
     }
 
     if (!shiftConfig) {
-      alert("교대근무 설정을 불러오지 못했습니다.\n(Failed to load your shift configuration.)");
+      alert("교대근무 설정을 불러오지 못했습니다.");
       return;
     }
 
@@ -439,9 +413,9 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       // google_email이 있으면 이미 연동된 상태이므로 재인증 필요
       if (googleEmail) {
         const shouldReauth = confirm(
-          "Google 계정 연동 인증이 만료되었습니다.\n(Re-authentication is required for your linked Google account.)\n" +
-          "재인증 후 일정 등록이 자동으로 진행됩니다.\n(The sync process will continue automatically after re-auth.)\n\n" +
-          "재인증하시겠습니까?\n(Do you want to re-authenticate now?)"
+          "Google 계정 연동 인증이 만료되었습니다.\n" +
+          "재인증 후 일정 등록이 자동으로 진행됩니다.\n\n" +
+          "재인증하시겠습니까?"
         );
         
         if (shouldReauth) {
@@ -451,7 +425,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         return;
       } else {
         // 연동 자체가 안된 경우
-        alert("Google Calendar 연동이 필요합니다.\n설정에서 Google Calendar를 연동해주세요.\n(Google Calendar integration is required. Please connect it in settings.)");
+        alert("Google Calendar 연동이 필요합니다.\n설정에서 Google Calendar를 연동해주세요.");
         await saveErrorLog(
           'GoogleCalendarSyncModal',
           'MISSING_ACCESS_TOKEN',
@@ -467,7 +441,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     try {
       // 사용자 Gmail 계정 가져오기 (이미 위에서 선언됨)
       if (!googleEmail) {
-        alert("Google 계정 정보를 찾을 수 없습니다.\n(Google account information is missing.)");
+        alert("Google 계정 정보를 찾을 수 없습니다.");
         setIsLoading(false);
         return;
       }
@@ -637,8 +611,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
 
       if (totalFailCount === 0 && totalSkipCount === 0) {        
         const goToCalendar = confirm(
-          `${totalSuccessCount}개의 일정이 Google Calendar에 등록되었습니다!\n(Registered ${totalSuccessCount} events in Google Calendar.)\n` +
-          "Google Calendar로 이동하시겠습니까?\n(Do you want to open Google Calendar?)"
+          `${totalSuccessCount}개의 일정이 Google Calendar에 등록되었습니다!\nGoogle Calendar로 이동하시겠습니까?`
         );
         
         if (goToCalendar) {
@@ -647,26 +620,24 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         
         onClose();
       } else {
-        let message = `일정 등록 성공: ${totalSuccessCount}개 (Registered ${totalSuccessCount} events)`;
+        let message = `알정 등록 성공: ${totalSuccessCount}개`;
         if (totalSkipCount > 0) {
-          message += `\n중복 건너뜀: ${totalSkipCount}개 (Skipped duplicates: ${totalSkipCount})`;
+          message += `\n중복 건너뜀: ${totalSkipCount}개`;
         }
         if (totalFailCount > 0) {
-          message += `\n일정 등록 실패: ${totalFailCount}개 (Failed events: ${totalFailCount})`;
+          message += `\n일정 등록 실패: ${totalFailCount}개`;
         }
         message += '\n\n';
         if (totalSkipCount > 0) {
-          message += '이미 교대근무 일정이 등록된 날짜는 건너뛰었습니다.\n' +
-            '(Dates that already had Dayf shifts were skipped.)\n';
+          message += '이미 교대근무 일정이 등록된 날짜는 건너뛰었습니다.\n';
         }
         if (totalFailCount > 0) {
-          message += '실패한 일정은 다시 시도해주세요.\n' +
-            '(Please retry the failed events.)';
+          message += '실패한 일정은 다시 시도해주세요.';
         }
         alert(message);
         
         if (totalSuccessCount > 0) {
-          const goToCalendar = confirm("Google Calendar로 이동하시겠습니까?\n(Do you want to open Google Calendar?)");
+          const goToCalendar = confirm("Google Calendar로 이동하시겠습니까?");
           if (goToCalendar) {
             window.open("https://calendar.google.com", "_blank");
           }
@@ -690,7 +661,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         console.error("에러 로그 저장 실패:", logError);
       }
       
-      alert(`일정 등록 중 오류가 발생했습니다.\n(An error occurred while syncing events.)\n${error.message}`);
+      alert(`일정 등록 중 오류가 발생했습니다.\n${error.message}`);
     }
   };
 
@@ -702,7 +673,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       const accessToken = sessionStorage.getItem("access_token");
 
       if (!accessToken) {
-        alert("Google Calendar 연동이 필요합니다.\n(Google Calendar integration is required.)");
+        alert("Google Calendar 연동이 필요합니다.");
         setIsDeleting(false);
         return;
       }
@@ -721,7 +692,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       } else {
         // 날짜 범위가 설정된 경우
         if (!deleteStartDate || !deleteEndDate) {
-          alert("삭제할 날짜 범위를 선택해주세요.\n(Please select the date range to delete.)");
+          alert("삭제할 날짜 범위를 선택해주세요.");
           setIsDeleting(false);
           return;
         }
@@ -812,12 +783,12 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       setShowPreview(previewData.length > 0);
 
       if (previewData.length === 0) {
-        alert("삭제할 Dayf 일정이 없습니다.\n(No Dayf events found to delete.)");
+        alert("삭제할 Dayf 일정이 없습니다.");
       }
 
     } catch (error) {
       console.error("미리보기 조회 중 오류:", error);
-      alert(`미리보기 조회 중 오류가 발생했습니다.\n(An error occurred while fetching the preview.)\n${error.message}`);
+      alert(`미리보기 조회 중 오류가 발생했습니다.\n${error.message}`);
       setShowPreview(false);
     } finally {
       setIsDeleting(false);
@@ -827,13 +798,13 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
   // 일정 삭제 실행 핸들러
   const handleDelete = async () => {
     if (previewEvents.length === 0) {
-      alert("삭제할 일정이 없습니다.\n(There are no events to delete.)");
+      alert("삭제할 일정이 없습니다.");
       return;
     }
 
     const confirmMessage = deleteAll
-      ? `모든 Dayf 일정 ${previewEvents.length}개를 삭제하시겠습니까?\n(Do you want to delete all ${previewEvents.length} Dayf events?)\n이 작업은 되돌릴 수 없습니다.\n(This action cannot be undone.)`
-      : `선택한 기간의 Dayf 일정 ${previewEvents.length}개를 삭제하시겠습니까?\n(Do you want to delete ${previewEvents.length} Dayf events in the selected range?)\n이 작업은 되돌릴 수 없습니다.\n(This action cannot be undone.)`;
+      ? `모든 Dayf 일정 ${previewEvents.length}개를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`
+      : `선택한 기간의 Dayf 일정 ${previewEvents.length}개를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
 
     if (!confirm(confirmMessage)) {
       return;
@@ -844,7 +815,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       const accessToken = sessionStorage.getItem("access_token");
 
       if (!accessToken) {
-        alert("Google Calendar 연동이 필요합니다.\n(Google Calendar integration is required.)");
+        alert("Google Calendar 연동이 필요합니다.");
         setIsDeleting(false);
         return;
       }
@@ -997,9 +968,9 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         }
       }
 
-      let message = `삭제 완료!\n성공: ${totalSuccessCount}개\n(Delete complete. Successful deletions: ${totalSuccessCount})`;
+      let message = `삭제 완료!\n성공: ${totalSuccessCount}개`;
       if (totalFailCount > 0) {
-        message += `\n실패: ${totalFailCount}개\n(Failed deletions: ${totalFailCount})`;
+        message += `\n실패: ${totalFailCount}개`;
       }
 
       alert(message);
@@ -1013,7 +984,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
 
     } catch (error) {
       console.error("일정 삭제 중 오류:", error);
-      alert(`일정 삭제 중 오류가 발생했습니다.\n(An error occurred while deleting events.)\n${error.message}`);
+      alert(`일정 삭제 중 오류가 발생했습니다.\n${error.message}`);
     } finally {
       setIsDeleting(false);
     }
@@ -1286,9 +1257,6 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
                   </div>
                   <p className="helper-text" style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
                     * 종료일은 시작일부터 최대 12개월까지 선택 가능합니다.
-                  </p>
-                   <p className="helper-text" style={{ fontSize: "12px", color: "#666" }}>
-                   * Google Calendar에 ‘주간/오후/야간’ 혹은 ‘주간근무/오후근무/야간근무/shift’ 단어가 포함된 일정이 이미 있는 경우 중복 등록이 진행되지 않습니다.
                   </p>
                 </div>
 

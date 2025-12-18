@@ -1,5 +1,0 @@
-{
-    "deno.enable": true,
-    "deno.config": "./tsconfig.json",
-    "deno.path": "/absolute/path/to"
-  }

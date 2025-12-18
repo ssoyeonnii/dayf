@@ -1,7 +1,0 @@
-{
-    "compilerOptions": {
-      "lib": ["deno.ns"],
-      "types": ["deno.ns"],
-      "strict": true
-    }
-  }

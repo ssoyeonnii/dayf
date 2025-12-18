@@ -1,7 +1,6 @@
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import GoogleAccountManage from "../services/googleAuthService.jsx";
-import { persistGoogleToken } from "../services/googleTokenService.js";
 
 const GoogleLoginButton = () => {
   const navigate = useNavigate();
@@ -12,7 +11,7 @@ const GoogleLoginButton = () => {
     scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
     prompt: 'consent',
     overrideScope:true,
-    onSuccess: async ({ access_token, expires_in }) => {
+    onSuccess: async ({ access_token }) => {
       try {
         if (!access_token) {
           alert('Google 액세스 토큰을 받지 못했습니다. 다시 시도해주세요.');
@@ -38,22 +37,6 @@ const GoogleLoginButton = () => {
         sessionStorage.setItem('googleuser', "1");
         sessionStorage.setItem('access_token', access_token);
         sessionStorage.setItem('google_email', user?.email || '');
-
-        try {
-          await persistGoogleToken({
-            userId: user?.email || "",
-            accessToken: access_token,
-            expiresIn: typeof expires_in === "number" ? expires_in : undefined,
-          });
-        } catch (persistError) {
-          console.error("Failed to persist Google token securely", persistError);
-          await GoogleAccountManage.saveErrorLog(
-            "GoogleLoginButton",
-            "TOKEN_PERSIST_FAILED",
-            persistError.message,
-            user?.email || null
-          );
-        }
 
         alert(`${user?.name || '사용자'}님 환영합니다!`);
         navigate('/');

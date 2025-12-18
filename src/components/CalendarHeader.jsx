@@ -6,7 +6,6 @@ import CalDateModal from "./CalDateModal";
 import GoogleCalendarSyncModal from "./GoogleCalendarSyncModal";
 import "./CalendarHeader.css"; 
 import { supabase } from "./supabaseClient.jsx"; //구글 연동 정보 체크 필요
-import { persistGoogleToken, removeStoredGoogleToken } from "../services/googleTokenService.js";
 
 function CalendarHeader({
   year,
@@ -180,7 +179,7 @@ function CalendarHeader({
     scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
     prompt: 'consent',
     overrideScope: true,
-    onSuccess: async ({ access_token, expires_in }) => {
+    onSuccess: async ({ access_token }) => {
 
       try {
         if (!access_token) {
@@ -241,21 +240,6 @@ function CalendarHeader({
         sessionStorage.setItem('access_token', access_token);
         if (finalGoogleEmail) {
           sessionStorage.setItem('google_email', finalGoogleEmail);
-        }
-
-        try {
-          await persistGoogleToken({
-            userId,
-            accessToken: access_token,
-            expiresIn: typeof expires_in === "number" ? expires_in : undefined,
-          });
-        } catch (persistError) {
-          console.error("Failed to securely store Google token", persistError);
-          await saveErrorLog(
-            "CalendarHeader",
-            "TOKEN_PERSIST_FAILED",
-            persistError.message || "토큰 저장 실패"
-          );
         }
 
         // 연동 상태 업데이트
@@ -337,17 +321,6 @@ function CalendarHeader({
         if (!res.success) {
           alert('연동 해제 중 DB 오류가 발생했습니다.');
           return false;
-        }
-
-        try {
-          await removeStoredGoogleToken(userId);
-        } catch (tokenErr) {
-          console.error("Failed to delete encrypted Google token", tokenErr);
-          await saveErrorLog(
-            "CalendarHeader",
-            "TOKEN_DELETE_FAILED",
-            tokenErr.message || "토큰 삭제 실패"
-          );
         }
 
 
