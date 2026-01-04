@@ -38,10 +38,23 @@ async function linkGoogleToCurrentUser(currentUserId, accessToken) {
   const googleEmail = userinfo.email;
   const googleSub = userinfo.sub;
 
+  // currentUserId → 해당 유저 row 조회해서 num 가져오기
+  const { data: currentUser, error: currentUserErr } = await supabase
+    .from("work_users")
+    .select("id, user_id")
+    .eq("user_id", currentUserId)
+    .maybeSingle();
+
+  if (currentUserErr || !currentUser) {
+    throw new Error("CURRENT_USER_NOT_FOUND");
+  }
+
+  const currentUserNum = currentUser.id;
+
   // 1) EMAIL_IS_USERID: googleEmail이 다른 Dayf 계정의 user_id로 존재하면 충돌
   const { data: emailUser, error: emailErr } = await supabase
     .from("work_users")
-    .select("user_id, user_pw")
+    .select("id, user_id, user_pw")
     .eq("user_id", googleEmail)
     .maybeSingle();
 
@@ -53,32 +66,62 @@ async function linkGoogleToCurrentUser(currentUserId, accessToken) {
     return { error: "EMAIL_IS_USERID", conflictUserId: googleEmail };
   }
 
-  // 2) ALREADY_LINKED: 동일 google_sub가 다른 Dayf 계정에 연결되어 있는 경우
-  const { data: subUser, error: subErr } = await supabase
-    .from("work_users")
-    .select("user_id")
-    .eq("google_sub", googleSub)
-    .maybeSingle();
+  // 2) ALREADY_LINKED: social_login_users에서 동일 google sub가 다른 user_id(num)에 연결된 경우
+  const { data: socialLink, error: socialErr } = await supabase
+  .from("social_login_users")
+  .select("user_id")        // 여기 user_id = work_users.id
+  .eq("provider", "google")
+  .eq("provider_user_id", googleSub)
+  .maybeSingle();
 
-  if (subErr) {
-    throw new Error("DB_CHECK_FAILED: " + subErr.message);
+  if (socialErr) {
+  throw new Error("DB_CHECK_FAILED: " + socialErr.message);
   }
 
-  if (subUser && subUser.user_id && subUser.user_id !== currentUserId) {
-    return { error: "ALREADY_LINKED", message: "해당 Google 계정은 이미 다른 Dayf 계정에 연동되어 있습니다." };
+  if (socialLink && socialLink.user_id !== currentUserNum) {
+  return { error: "ALREADY_LINKED", message: "해당 Google 계정은 이미 다른 Dayf 계정에 연동되어 있습니다." };
   }
 
-  // 3) Update current user with google info
-  const { error: updateError } = await supabase
-    .from("work_users")
-    .update({ google_sub: googleSub, google_email: googleEmail })
-    .eq("user_id", currentUserId);
+  // 3) social_login_users에 구글 연동 정보 upsert
+  const { data: existingLink } = await supabase
+  .from("social_login_users")
+  .select("user_id")
+  .eq("user_id", currentUserNum)
+  .eq("provider", "google")
+  .maybeSingle();
 
-  if (updateError) {
-    throw new Error("DB_UPDATE_FAILED: " + updateError.message);
+  if (existingLink) {
+  // 이미 row 있으면 provider_user_id와 토큰 최신 값으로 업데이트
+  const { error: updateSocialErr } = await supabase
+    .from("social_login_users")
+    .update({
+      provider_user_id: googleSub,
+      provider_access_token: accessToken,
+      provider_refresh_token: null  // implicit flow에서는 refresh_token 미제공
+    })
+    .eq("user_id", currentUserNum)
+    .eq("provider", "google");
+
+    if (updateSocialErr) {
+      throw new Error("DB_UPDATE_FAILED: " + updateSocialErr.message);
+    }
+  } else {
+  // 없으면 새로 insert
+  const { error: insertSocialErr } = await supabase
+    .from("social_login_users")
+    .insert({
+      user_id: currentUserNum,   // work_users.id
+      provider: "google",
+      provider_user_id: googleSub,
+      provider_access_token: accessToken,
+      provider_refresh_token: null  // implicit flow에서는 refresh_token 미제공
+    });
+
+    if (insertSocialErr) {
+      throw new Error("DB_INSERT_FAILED: " + insertSocialErr.message);
+    }
   }
-
-  return { user: { email: googleEmail, name: userinfo.name, google_sub: googleSub }, google_email: googleEmail };
+  return { user: { email: googleEmail, name: userinfo.name } };
 }
 
 // Google social login (no existing Dayf session)
@@ -87,53 +130,103 @@ async function signInWithGoogle(accessToken) {
   const googleEmail = userinfo.email;
   const googleSub = userinfo.sub;
 
-  // DAYF_ACCOUNT_EXISTS: 동일 이메일로 Dayf 자체 가입이 이미 존재하고 아직 google_sub 연동이 없는 경우
+  // DAYF_ACCOUNT_EXISTS: 동일 이메일로 Dayf 자체 가입이 이미 존재하고 아직 구글 연동이 없는 경우
   const { data: dayfUser, error: dayfErr } = await supabase
-    .from("work_users")
-    .select("user_id, google_sub, user_pw")
-    .eq("user_id", googleEmail)
-    .maybeSingle();
+  .from("work_users")
+  .select("id, user_id, user_pw")
+  .eq("user_id", googleEmail)
+  .maybeSingle();
 
   if (dayfErr) {
     throw new Error("DB_CHECK_FAILED: " + dayfErr.message);
   }
 
-  if (dayfUser && dayfUser.user_pw && !dayfUser.google_sub) {
-    return { error: "DAYF_ACCOUNT_EXISTS", message: "해당 이메일로 이미 Dayf 계정이 존재합니다. 일반 로그인을 이용해주세요." };
-  }
+  // ALREADY_LINKED: social_login_users에서 동일 sub가 다른 user_id(id)에 연결된 경우 방지
+  const { data: existingLink, error: socialErr } = await supabase
+  .from("social_login_users")
+  .select("user_id")
+  .eq("provider", "google")
+  .eq("provider_user_id", googleSub)
+  .maybeSingle();
 
-  // ALREADY_LINKED: 동일 sub가 다른 user_id에 연결되어 있는 경우 방지
-  const { data: subUser, error: subErr } = await supabase
-    .from("work_users")
-    .select("user_id")
-    .eq("google_sub", googleSub)
-    .maybeSingle();
-  if (subErr) {
-    throw new Error("DB_CHECK_FAILED: " + subErr.message);
+  // dayfUser가 있는 경우: 그 id과 다르면 다른 계정에 연동된 것
+  if (socialErr) {
+    throw new Error("DB_CHECK_FAILED: " + socialErr.message);
   }
-  if (subUser && subUser.user_id && subUser.user_id !== googleEmail) {
+  
+// ALREADY_LINKED: social_login_users에서 동일 sub가 다른 user_id(id)에 연결되어 있는 경우 방지
+if (existingLink && (!dayfUser || existingLink.user_id !== dayfUser.id)) {
     return { error: "ALREADY_LINKED", message: "해당 Google 계정은 이미 다른 Dayf 계정에 연동되어 있습니다." };
   }
 
-  // If user row exists, update; else insert
+  // work_users에 구글 연동 정보 upsert
+  let userNum;
+
   if (dayfUser) {
+    userNum = dayfUser.id;
+
     const { error: updateErr } = await supabase
       .from("work_users")
-      .update({ google_sub: googleSub, google_email: googleEmail, user_name: userinfo.name })
+      .update({ user_name: userinfo.name })
       .eq("user_id", googleEmail);
+
     if (updateErr) {
       throw new Error("DB_UPDATE_FAILED: " + updateErr.message);
     }
   } else {
-    const { error: insertErr } = await supabase
+    const { data: inserted, error: insertErr } = await supabase
       .from("work_users")
-      .insert([{ user_id: googleEmail, user_name: userinfo.name, google_sub: googleSub, google_email: googleEmail }]);
+      .insert([{ user_id: googleEmail, user_name: userinfo.name }])
+      .select("id")   // 방금 insert된 row의 id 가져오기
+      .single();
+
     if (insertErr) {
       throw new Error("DB_INSERT_FAILED: " + insertErr.message);
     }
+
+    userNum = inserted.id;
   }
 
-  return { user: { email: googleEmail, name: userinfo.name, google_sub: googleSub } };
+  // social_login_users에 google 연동 정보 insert/upsert
+  const { data: existingLink2 } = await supabase
+  .from("social_login_users")
+  .select("user_id")
+  .eq("user_id", userNum)
+  .eq("provider", "google")
+  .maybeSingle();
+
+  if (existingLink2) {
+  const { error: updateSocialErr } = await supabase
+    .from("social_login_users")
+    .update({
+      provider_user_id: googleSub,
+      provider_access_token: accessToken,
+      provider_refresh_token: null  // implicit flow에서는 refresh_token 미제공
+    })
+    .eq("user_id", userNum)
+    .eq("provider", "google");
+
+    if (updateSocialErr) {
+      throw new Error("DB_UPDATE_FAILED: " + updateSocialErr.message);
+    }
+  } else {
+  const { error: insertSocialErr } = await supabase
+    .from("social_login_users")
+    .insert({
+      user_id: userNum,
+      provider: "google",
+      provider_user_id: googleSub,
+      provider_access_token: accessToken,
+      provider_refresh_token: null  // implicit flow에서는 refresh_token 미제공
+    });
+
+    if (insertSocialErr) {
+      throw new Error("DB_INSERT_FAILED: " + insertSocialErr.message);
+    }
+  }
+  
+
+  return { user: { email: googleEmail, name: userinfo.name } };
 }
 
 async function deleteAccount(userId) {
@@ -146,15 +239,29 @@ async function deleteAccount(userId) {
   return { success: true };
 }
 
-// Unlink Google from existing Dayf account
 async function unlinkGoogleFromUser(userId) {
-  const { error } = await supabase
+  // 1) userId → id 조회
+  const { data: user, error: userErr } = await supabase
     .from("work_users")
-    .update({ google_sub: null, google_email: null})
-    .eq("user_id", userId);
-  if (error) {
-    return { success: false, error: error.message };
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (userErr || !user) {
+    return { success: false, error: "USER_NOT_FOUND" };
   }
+
+  // 2) social_login_users 에서 provider='google' 연동 삭제
+  const { error: socialErr } = await supabase
+    .from("social_login_users")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("provider", "google");
+
+  if (socialErr) {
+    return { success: false, error: socialErr.message };
+  }
+
   return { success: true };
 }
 
