@@ -2,6 +2,7 @@ import { Calendar, Settings, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import "./index.css";
+import { getUserInfoFromToken } from "../services/tokenManager.js";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -163,13 +164,12 @@ const Index = () => {
     };
   }, []);
 
-  // 세션에서 로그인 정보 불러오기
+  // JWT 토큰에서 로그인 정보 불러오기
   useEffect(() => {
-    const userName = sessionStorage.getItem("userName");
-    const userId = sessionStorage.getItem("userId");
+    const userInfo = getUserInfoFromToken();
 
-    if (userId && userName) {
-      // 세션이 있으면 calendar.jsx로 이동
+    if (userInfo && userInfo.user_id && userInfo.user_name) {
+      // JWT 토큰이 있으면 calendar.jsx로 이동
       navigate("/calendar");
     }
   }, [navigate]);

@@ -4,8 +4,9 @@ import { useGoogleLogin } from "@react-oauth/google";
 import GoogleAccountManage from "../services/googleAuthService.jsx";
 import CalDateModal from "./CalDateModal";
 import GoogleCalendarSyncModal from "./GoogleCalendarSyncModal";
-import "./CalendarHeader.css"; 
+import "./CalendarHeader.css";
 import { supabase } from "./supabaseClient.jsx"; //구글 연동 정보 체크 필요
+import { clearTokensOnLogout, getUserInfoFromToken, attemptAutoLogin } from "../services/tokenManager.js";
 
 function CalendarHeader({
   year,
@@ -18,6 +19,8 @@ function CalendarHeader({
   currentYear, // 오늘 연도
   currentMonth, // 오늘 월
 }) {
+  const navigate = useNavigate();
+
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState(null);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
@@ -27,14 +30,27 @@ function CalendarHeader({
   const [googleEmail, setGoogleEmail] = useState(null);
   const [isGoogleSyncModalOpen, setIsGoogleSyncModalOpen] = useState(false);
 
-  // 세션에서 로그인 정보 불러오기 및 Google 연동 상태 확인
+  // JWT 토큰에서 로그인 정보 불러오기 및 Google 연동 상태 확인
   useEffect(() => {
-    const storedUserName = sessionStorage.getItem("userName");
-    const storedUserId = sessionStorage.getItem("userId");
+    const loadUserInfo = async () => {
+      // 자동 로그인 시도 (토큰 검증)
+      const autoLoginResult = await attemptAutoLogin();
+      if (!autoLoginResult.success) {
+        // 토큰이 유효하지 않으면 로그인 페이지로 이동
+        navigate("/UserLogin");
+        return;
+      }
 
-    if (storedUserId && storedUserName) {
-      setUserId(storedUserId);
-      setUserName(storedUserName);
+      // JWT 토큰에서 사용자 정보 가져오기
+      const userInfo = getUserInfoFromToken();
+      if (!userInfo || !userInfo.user_id) {
+        // 토큰이 없거나 유효하지 않으면 로그인 페이지로 이동
+        navigate("/UserLogin");
+        return;
+      }
+
+      setUserId(userInfo.user_id);
+      setUserName(userInfo.user_name);
       
       // Google 연동 상태 확인 (sessionStorage 우선 확인)
       const storedGoogleEmail = sessionStorage.getItem("google_email");
@@ -54,7 +70,7 @@ function CalendarHeader({
             const { data, error } = await supabase
               .from("work_users")
               .select("google_email")
-              .eq("user_id", storedUserId)
+              .eq("user_id", userInfo.user_id)
               .maybeSingle();
 
             if (!error && data && data.google_email) {
@@ -74,7 +90,7 @@ function CalendarHeader({
             const { data, error } = await supabase
               .from("work_users")
               .select("google_sub, google_email")
-              .eq("user_id", storedUserId)
+              .eq("user_id", userInfo.user_id)
               .maybeSingle();
 
             if (error) {
@@ -104,8 +120,10 @@ function CalendarHeader({
 
         checkGoogleConnection();
       }
-    }
-  }, []);
+    };
+
+    loadUserInfo();
+  }, [navigate]);
 
   // 날짜 모달 열기
   const handleDateClick = () => {
@@ -143,14 +161,24 @@ function CalendarHeader({
     setIsUserTooltipOpen(false); // 다른 툴팁 닫기
   };
 
-  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("userId");
-    sessionStorage.removeItem("userName");
+  const handleLogout = async () => {
+    // JWT 토큰에서 사용자 ID 가져오기
+    const userInfo = getUserInfoFromToken();
+    const currentUserId = userInfo?.user_id || null;
+
+    // DAYF JWT 토큰 정리
+    await clearTokensOnLogout(currentUserId);
+
+    // Google Calendar 관련 정보도 제거
     sessionStorage.removeItem("access_token");
     sessionStorage.removeItem("google_email");
+    
+    // 기존 sessionStorage 값들도 제거 (마이그레이션 기간 동안)
+    sessionStorage.removeItem("userId");
+    sessionStorage.removeItem("userName");
     sessionStorage.removeItem("googleuser");
+    
     window.location.href = "/";
   };
 
@@ -484,7 +512,7 @@ function CalendarHeader({
                     <span className="user-tooltip-name">{userName}님</span>
                   </div>
                   <div className="user-tooltip-actions">
-                    {sessionStorage.getItem("googleuser") == 0 && (
+                    {getUserInfoFromToken()?.login_type !== 'google' && (
                       <button 
                       className="user-tooltip-btn primary" 
                       onClick={handleUserUpdate}

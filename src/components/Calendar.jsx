@@ -7,10 +7,14 @@ import DatePicker, { setDefaultLocale } from "react-datepicker";
 import SettingModal from "./SettingModal";
 import "react-datepicker/dist/react-datepicker.css";
 import { supabase } from "./supabaseClient.jsx";
+import { getUserInfoFromToken, attemptAutoLogin } from "../services/tokenManager.js";
+import { useNavigate } from "react-router-dom";
 
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY; // .env local에 저장된 API_KEY를 가져옴
 
 function Calendar() {
+  const navigate = useNavigate();
+  
   // 현재 연도/월 상태 관리 => 그래서 datepicker도 header의 상위 컴포넌트에서 관리하는게 맞음
   const today = new Date();
   const [date, setDate] = useState({
@@ -45,14 +49,31 @@ function Calendar() {
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    const name = sessionStorage.getItem("userName");
-    const id = sessionStorage.getItem("userId");
+    const loadUserInfo = async () => {
+      // 자동 로그인 시도 (토큰 검증)
+      const autoLoginResult = await attemptAutoLogin();
+      if (!autoLoginResult.success) {
+        // 토큰이 유효하지 않으면 로그인 페이지로 이동
+        navigate("/UserLogin");
+        return;
+      }
 
-    if (id && name) {
-      setUserName(name);
-      setUserId(id);
+      // JWT 토큰에서 사용자 정보 가져오기
+      const userInfo = getUserInfoFromToken();
+      if (!userInfo || !userInfo.user_id) {
+        // 토큰이 없거나 유효하지 않으면 로그인 페이지로 이동
+        navigate("/UserLogin");
+        return;
+      }
 
-      const fetchUserConfig = async () => {
+      const id = userInfo.user_id;
+      const name = userInfo.user_name;
+
+      if (id && name) {
+        setUserName(name);
+        setUserId(id);
+
+        const fetchUserConfig = async () => {
         const { data, error } = await supabase
           .from("work_user_shifts")
           .select("*")
@@ -109,9 +130,12 @@ function Calendar() {
         }
       };
 
-      fetchUserConfig();
-    }
-  }, []);
+        fetchUserConfig();
+      }
+    };
+
+    loadUserInfo();
+  }, [navigate]);
 
   useEffect(() => {
     if (!shiftConfig) return;
