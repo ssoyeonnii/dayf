@@ -3,6 +3,7 @@ import { supabase } from "./supabaseClient.jsx";
 import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
 import "./UserJoin.css";
+import { getUserInfoFromToken, attemptAutoLogin, issueTokensOnLogin } from "../services/tokenManager.js";
 
 function UserUpdate() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -16,17 +17,28 @@ function UserUpdate() {
 
   // 컴포넌트 마운트 시 현재 사용자 정보 로드
   useEffect(() => {
-    const currentUserId = sessionStorage.getItem("userId");
-    const currentUserName = sessionStorage.getItem("userName");
-    
-    if (!currentUserId || !currentUserName) {
-      alert("로그인이 필요합니다.");
-      navigate("/UserLogin");
-      return;
-    }
-    
-    setUserid(currentUserId);
-    setUsername(currentUserName);
+    const loadUserInfo = async () => {
+      // 자동 로그인 시도 (토큰 검증)
+      const autoLoginResult = await attemptAutoLogin();
+      if (!autoLoginResult.success) {
+        alert("로그인이 필요합니다.");
+        navigate("/UserLogin");
+        return;
+      }
+
+      // JWT 토큰에서 사용자 정보 가져오기
+      const userInfo = getUserInfoFromToken();
+      if (!userInfo || !userInfo.user_id) {
+        alert("로그인이 필요합니다.");
+        navigate("/UserLogin");
+        return;
+      }
+      
+      setUserid(userInfo.user_id);
+      setUsername(userInfo.user_name);
+    };
+
+    loadUserInfo();
   }, [navigate]);
 
   // 현재 비밀번호 확인
@@ -103,9 +115,20 @@ function UserUpdate() {
         console.error("회원정보 수정 오류:", error.message);
         alert("회원정보 수정에 실패했습니다.");
       } else {
-        alert("회원정보가 수정되었습니다!");
-        // sessionStorage 업데이트
+        // JWT 토큰에서 현재 login_type 가져오기
+        const userInfo = getUserInfoFromToken();
+        const loginType = userInfo?.login_type || 'normal';
+        
+        // 이름이 변경된 경우 JWT 토큰 재발급
+        await issueTokensOnLogin(
+          { user_id: userid, user_name: username },
+          loginType
+        );
+        
+        // sessionStorage 업데이트 (fallback용, 마이그레이션 기간 동안)
         sessionStorage.setItem("userName", username);
+        
+        alert("회원정보가 수정되었습니다!");
         navigate("/");
       }
     } catch (err) {

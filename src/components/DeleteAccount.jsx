@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { supabase } from "./supabaseClient.jsx";
 import bcrypt from "bcryptjs";
 import { useNavigate,useParams } from "react-router-dom";
+import { getUserInfoFromToken } from "../services/tokenManager.js";
 
 function DeleteAccount() {
  const { userId } = useParams();
@@ -9,21 +10,21 @@ function DeleteAccount() {
 
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  //Session googleuser 값 확인
-  const googleuser = sessionStorage.getItem("googleuser");
+  // JWT 토큰에서 login_type 확인
+  const userInfo = getUserInfoFromToken();
+  const isGoogleUser = userInfo?.login_type === 'google';
   const [agreemsg, setAgreemsg] = useState(""); //사용자가 입력하는 탈퇴 동의 메세지
-  const isGoogleUser = googleuser == "1"; //1 : true, 0 : false
   const canSubmit = isGoogleUser ? agreemsg.trim() === "동의합니다" : !!password.trim();
   //구글 유저면 탈퇴 동의 메세지 입력해야 탈퇴버튼 활성화, 구글 유저가 아닐 경우 비밀번호 입력 시 활성화
 
   const deleteUser = async () => {
     
-    if (!password && googleuser == "0") {
+    if (!password && !isGoogleUser) {
       alert("비밀번호를 입력해주세요.");
       return;
     }
 
-    if ((!agreemsg && googleuser == "1") || (googleuser == "1" && agreemsg !== "동의합니다")) {
+    if ((!agreemsg && isGoogleUser) || (isGoogleUser && agreemsg !== "동의합니다")) {
       alert("동의합니다를 입력해주세요.");
       return;
     }
@@ -45,7 +46,7 @@ function DeleteAccount() {
         return;
       }
 
-      if (googleuser == "0") {
+      if (!isGoogleUser) {
         const hashedPassword = data.user_pw;
 
         // 2. 입력한 비밀번호와 DB 해시값 비교
@@ -77,10 +78,12 @@ function DeleteAccount() {
         alert("회원 탈퇴 실패: " + deleteError.message);
       } else {
         alert("회원 탈퇴가 완료되었습니다.");
-        sessionStorage.removeItem("userId");
-        sessionStorage.removeItem("userName");
+        // 모든 sessionStorage 값 제거
         sessionStorage.removeItem("access_token");
         sessionStorage.removeItem("google_email");
+        // 기존 sessionStorage 값들도 제거 (마이그레이션 기간 동안)
+        sessionStorage.removeItem("userId");
+        sessionStorage.removeItem("userName");
         sessionStorage.removeItem("googleuser");
         navigate("/");
       }
@@ -102,7 +105,7 @@ function DeleteAccount() {
       </p>
 
       {/* 구글유저가 아닐 경우 비밀번호 입력 */}
-      {googleuser == "0" && (
+      {!isGoogleUser && (
       <div className="form-group">
         <input
         autoComplete="off"
@@ -117,7 +120,7 @@ function DeleteAccount() {
       )}
 
       {/* 구글 유저인 경우 동의합니다 입력 */}
-      {googleuser == "1" && (
+      {isGoogleUser && (
       <div className="form-group">
         <input
         autoComplete="off"
