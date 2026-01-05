@@ -1,6 +1,7 @@
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import GoogleAccountManage from "../services/googleAuthService.jsx";
+import { issueTokensOnLogin } from "../services/tokenManager.js";
 
 const GoogleLoginButton = () => {
   const navigate = useNavigate();
@@ -32,11 +33,16 @@ const GoogleLoginButton = () => {
         }
 
         const { user } = result;
-        sessionStorage.setItem('userName', user?.name || 'GoogleUser');
-        sessionStorage.setItem('userId', user?.email || '');
-        sessionStorage.setItem('googleuser', "1");
+        
+        // Google Calendar API용 토큰 및 이메일 저장 (JWT와 별개)
         sessionStorage.setItem('access_token', access_token);
         sessionStorage.setItem('google_email', user?.email || '');
+
+        // DAYF JWT 토큰 발급 (user_id, user_name, login_type 포함)
+        await issueTokensOnLogin(
+          { user_id: user?.email, user_name: user?.name || 'GoogleUser' },
+          'google'
+        );
 
         alert(`${user?.name || '사용자'}님 환영합니다!`);
         navigate('/');

@@ -3,6 +3,7 @@ import { supabase } from "./supabaseClient.jsx";
 import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
 import "./UserJoin.css";
+import { issueTokensOnLogin } from "../services/tokenManager.js";
 
 function UserJoin() {
   const [username, setUsername] = useState("");
@@ -98,9 +99,11 @@ function UserJoin() {
       } else {
         alert("회원가입 완료!");
         
-        // 자동 로그인 처리
-        sessionStorage.setItem("userName", username);
-        sessionStorage.setItem("userId", userid);
+        // 자동 로그인 처리 - JWT 토큰 발급
+        await issueTokensOnLogin(
+          { user_id: userid, user_name: username },
+          'normal'
+        );
         
         setUsername("");
         setUserid("");

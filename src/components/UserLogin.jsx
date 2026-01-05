@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
 import "./UserJoin.css";
 import GoogleLoginButton from "./GoogleLoginButton.jsx";
+import { issueTokensOnLogin } from "../services/tokenManager.js";
 
 function UserLogin() {
   const [userid, setUserid] = useState("");
@@ -45,11 +46,16 @@ function UserLogin() {
     if (isPasswordCorrect) {
       alert(`${data.user_name}님 환영합니다!`);
 
-      // sessionStorage에 저장
-      sessionStorage.setItem("userName", data.user_name);
-      sessionStorage.setItem("userId", data.user_id);
-      sessionStorage.setItem("google_email", data.google_email);
-      sessionStorage.setItem("googleuser", "0"); //구글유저가 아님
+      // Google Calendar 연동용 정보만 저장 (JWT 토큰에는 포함되지 않음)
+      if (data.google_email) {
+        sessionStorage.setItem("google_email", data.google_email);
+      }
+
+      // DAYF JWT 토큰 발급 (user_id, user_name, login_type 포함)
+      await issueTokensOnLogin(
+        { user_id: data.user_id, user_name: data.user_name },
+        'normal'
+      );
 
       navigate("/"); //calendar.jsx로 이동
     } else {
