@@ -9,7 +9,7 @@ import {
 } from './jwtService.js';
 
 const TOKEN_KEYS = {
-  ACCESS: 'dayf_access_token',
+  ACCESS: 'dayf_jwt',
   REFRESH: 'dayf_refresh_token',
 };
 
@@ -75,7 +75,7 @@ export async function getValidAccessToken() {
   if (isTokenExpiringSoon(accessToken)) {
     try {
       // Access Token을 복호화하여 user_id 추출
-      const userInfo = getUserInfoFromToken();
+      const userInfo = await getUserInfoFromValidToken();
       if (!userInfo || !userInfo.user_id) {
         console.error('Failed to get user info from access token');
         return null;
@@ -114,16 +114,29 @@ export async function getValidAccessToken() {
 }
 
 /**
- * JWT Access Token에서 사용자 정보 가져오기
- * @returns {Object|null} { user_id, user_name, login_type } 또는 null
+ * JWT 검증 후 사용자 정보 가져오기
+ * @returns {Promise<Object|null>} { user_id, user_name, login_type } 또는 null
  */
-export function getUserInfoFromToken() {
+export async function getUserInfoFromValidToken() {
   const accessToken = sessionStorage.getItem(TOKEN_KEYS.ACCESS);
   if (!accessToken) return null;
-  
+
+  const result = await verifyToken(accessToken);
+  if (!result.valid || !result.payload?.user_id) {
+    return null;
+  }
+
+  return {
+    user_id: result.payload.user_id,
+    user_name: result.payload.user_name,
+    login_type: result.payload.login_type || 'normal',
+  };
+}
+
+function getUserInfoFromTokenPayload(accessToken) {
+  if (!accessToken) return null;
   const payload = decodeToken(accessToken);
   if (!payload || !payload.user_id) return null;
-  
   return {
     user_id: payload.user_id,
     user_name: payload.user_name,
@@ -137,7 +150,9 @@ export function getUserInfoFromToken() {
  */
 function getUserInfoFromSession() {
   // JWT 토큰에서 정보 가져오기 (우선)
-  const tokenInfo = getUserInfoFromToken();
+  const tokenInfo = getUserInfoFromTokenPayload(
+    sessionStorage.getItem(TOKEN_KEYS.ACCESS)
+  );
   if (tokenInfo) {
     return tokenInfo;
   }
@@ -168,7 +183,7 @@ export async function validateCurrentTokens() {
   }
 
   // Access Token 만료 시, Access Token을 복호화하여 user_id 추출 후 DB에서 Refresh Token 확인
-  const userInfo = getUserInfoFromToken();
+  const userInfo = getUserInfoFromTokenPayload(accessToken);
   if (!userInfo || !userInfo.user_id) {
     return { valid: false, reason: 'NO_USER_INFO' };
   }
@@ -225,7 +240,9 @@ export async function attemptAutoLogin() {
   const validation = await validateCurrentTokens();
 
   if (!validation.valid) {
-    const userInfo = getUserInfoFromToken();
+    const userInfo = getUserInfoFromTokenPayload(
+      sessionStorage.getItem(TOKEN_KEYS.ACCESS)
+    );
     await clearTokensOnLogout(userInfo?.user_id || null);
     return { success: false, reason: validation.reason };
   }
@@ -233,7 +250,9 @@ export async function attemptAutoLogin() {
   if (validation.needsRefresh) {
     const newAccessToken = await getValidAccessToken();
     if (!newAccessToken) {
-      const userInfo = getUserInfoFromToken();
+      const userInfo = getUserInfoFromTokenPayload(
+        sessionStorage.getItem(TOKEN_KEYS.ACCESS)
+      );
       await clearTokensOnLogout(userInfo?.user_id || null);
       return { success: false, reason: 'REFRESH_FAILED' };
     }

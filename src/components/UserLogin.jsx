@@ -52,10 +52,14 @@ function UserLogin() {
       }
 
       // DAYF JWT 토큰 발급 (user_id, user_name, login_type 포함)
-      await issueTokensOnLogin(
+      const tokenResult = await issueTokensOnLogin(
         { user_id: data.user_id, user_name: data.user_name },
         'normal'
       );
+      if (!tokenResult?.accessToken) {
+        setErrorMsg("로그인 토큰 발급에 실패했습니다. 다시 시도해주세요.");
+        return;
+      }
 
       navigate("/"); //calendar.jsx로 이동
     } else {

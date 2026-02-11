@@ -3,7 +3,7 @@ import { supabase } from "./supabaseClient.jsx";
 import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
 import "./UserJoin.css";
-import { getUserInfoFromToken, attemptAutoLogin, issueTokensOnLogin } from "../services/tokenManager.js";
+import { getUserInfoFromValidToken, attemptAutoLogin, issueTokensOnLogin } from "../services/tokenManager.js";
 
 function UserUpdate() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -27,7 +27,7 @@ function UserUpdate() {
       }
 
       // JWT 토큰에서 사용자 정보 가져오기
-      const userInfo = getUserInfoFromToken();
+      const userInfo = await getUserInfoFromValidToken();
       if (!userInfo || !userInfo.user_id) {
         alert("로그인이 필요합니다.");
         navigate("/UserLogin");
@@ -116,7 +116,12 @@ function UserUpdate() {
         alert("회원정보 수정에 실패했습니다.");
       } else {
         // JWT 토큰에서 현재 login_type 가져오기
-        const userInfo = getUserInfoFromToken();
+        const userInfo = await getUserInfoFromValidToken();
+        if (!userInfo || !userInfo.user_id) {
+          alert("로그인이 만료되었습니다. 다시 로그인해주세요.");
+          navigate("/UserLogin");
+          return;
+        }
         const loginType = userInfo?.login_type || 'normal';
         
         // 이름이 변경된 경우 JWT 토큰 재발급

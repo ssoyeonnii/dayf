@@ -7,7 +7,7 @@ import DatePicker, { setDefaultLocale } from "react-datepicker";
 import SettingModal from "./SettingModal";
 import "react-datepicker/dist/react-datepicker.css";
 import { supabase } from "./supabaseClient.jsx";
-import { getUserInfoFromToken, attemptAutoLogin } from "../services/tokenManager.js";
+import { getUserInfoFromValidToken, attemptAutoLogin } from "../services/tokenManager.js";
 import { useNavigate } from "react-router-dom";
 
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY; // .env local에 저장된 API_KEY를 가져옴
@@ -49,6 +49,9 @@ function Calendar() {
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
+    // 기존에 저장된 Google access_token 제거 (DB에만 저장하도록 변경)
+    sessionStorage.removeItem('access_token');
+    
     const loadUserInfo = async () => {
       // 자동 로그인 시도 (토큰 검증)
       const autoLoginResult = await attemptAutoLogin();
@@ -59,7 +62,7 @@ function Calendar() {
       }
 
       // JWT 토큰에서 사용자 정보 가져오기
-      const userInfo = getUserInfoFromToken();
+      const userInfo = await getUserInfoFromValidToken();
       if (!userInfo || !userInfo.user_id) {
         // 토큰이 없거나 유효하지 않으면 로그인 페이지로 이동
         navigate("/UserLogin");

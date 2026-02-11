@@ -2,7 +2,7 @@ import * as jose from 'jose';
 
 // 토큰 서명용 시크릿 키 (프론트엔드용 - 추후 백엔드 이전 시 변경)
 const SECRET_KEY = new TextEncoder().encode(
-  import.meta.env.VITE_JWT_SECRET || 'dayf-temp-secret-key-change-in-production'
+  import.meta.env.VITE_JWT_SECRET || 'dayf'
 );
 
 const ACCESS_TOKEN_EXPIRY = '1h';   // 1시간
@@ -14,10 +14,12 @@ const REFRESH_TOKEN_EXPIRY = '14d'; // 14일
  * @returns {Promise<string>} JWT Access Token
  */
 export async function generateAccessToken(user) {
+  const issuedAtMicro = Date.now() * 1000;
   const token = await new jose.SignJWT({
     user_id: user.user_id,
     user_name: user.user_name,
     login_type: user.login_type, // 'google' | 'normal'
+    issued_at_micro: issuedAtMicro,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -33,9 +35,11 @@ export async function generateAccessToken(user) {
  * @returns {Promise<string>} JWT Refresh Token
  */
 export async function generateRefreshToken(userId) {
+  const issuedAtMicro = Date.now() * 1000;
   const token = await new jose.SignJWT({
     user_id: userId,
     token_type: 'refresh',
+    issued_at_micro: issuedAtMicro,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient.jsx";
 import bcrypt from "bcryptjs";
 import { useNavigate,useParams } from "react-router-dom";
-import { getUserInfoFromToken } from "../services/tokenManager.js";
+import { getUserInfoFromValidToken } from "../services/tokenManager.js";
+import GoogleAccountManage from "../services/googleAuthService.jsx";
 
 function DeleteAccount() {
  const { userId } = useParams();
@@ -10,12 +11,28 @@ function DeleteAccount() {
 
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  // JWT 토큰에서 login_type 확인
-  const userInfo = getUserInfoFromToken();
-  const isGoogleUser = userInfo?.login_type === 'google';
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
+  const [tokenUserId, setTokenUserId] = useState(null);
+  const [hasValidToken, setHasValidToken] = useState(false);
   const [agreemsg, setAgreemsg] = useState(""); //사용자가 입력하는 탈퇴 동의 메세지
   const canSubmit = isGoogleUser ? agreemsg.trim() === "동의합니다" : !!password.trim();
   //구글 유저면 탈퇴 동의 메세지 입력해야 탈퇴버튼 활성화, 구글 유저가 아닐 경우 비밀번호 입력 시 활성화
+
+  useEffect(() => {
+    const loadTokenInfo = async () => {
+      const userInfo = await getUserInfoFromValidToken();
+      if (userInfo?.user_id) {
+        setHasValidToken(true);
+        setTokenUserId(userInfo.user_id);
+        setIsGoogleUser(userInfo.login_type === "google");
+      } else {
+        setHasValidToken(false);
+        setTokenUserId(null);
+        setIsGoogleUser(false);
+      }
+    };
+    loadTokenInfo();
+  }, []);
 
   const deleteUser = async () => {
     
@@ -34,6 +51,22 @@ function DeleteAccount() {
     setLoading(true);
 
     try {
+      // 유효 토큰이 있으면 URL userId와 토큰 userId 일치 여부 확인
+      if (hasValidToken && tokenUserId && tokenUserId !== userId) {
+        alert("본인 계정이 아닙니다. 다시 로그인해주세요.");
+        return;
+      }
+
+      if (!hasValidToken) {
+        try {
+          await GoogleAccountManage.saveErrorLog(
+            "DeleteAccount",
+            "NO_VALID_TOKEN",
+            "탈퇴 요청 시 유효한 JWT가 없음",
+            userId
+          );
+        } catch {}
+      }
        // 1. DB에서 현재 유저의 해시된 비밀번호 조회
       const { data, error } = await supabase
         .from("work_users")
@@ -56,6 +89,9 @@ function DeleteAccount() {
           alert("비밀번호가 일치하지 않습니다.");
           return;
         }
+      } else if (!hasValidToken) {
+        alert("로그인이 만료되었습니다. Google 재로그인이 필요합니다.");
+        return;
       }
       // 3. 탈퇴 처리
       // 3.1. work_user_shift테이블에서 user_id를 참조하는 데이터 삭제
@@ -78,8 +114,7 @@ function DeleteAccount() {
         alert("회원 탈퇴 실패: " + deleteError.message);
       } else {
         alert("회원 탈퇴가 완료되었습니다.");
-        // 모든 sessionStorage 값 제거
-        sessionStorage.removeItem("access_token");
+        // 모든 sessionStorage 값 제거 (access_token은 DB에만 저장되므로 제거 불필요)
         sessionStorage.removeItem("google_email");
         // 기존 sessionStorage 값들도 제거 (마이그레이션 기간 동안)
         sessionStorage.removeItem("userId");
@@ -150,4 +185,3 @@ function DeleteAccount() {
 }
 
 export default DeleteAccount;
-

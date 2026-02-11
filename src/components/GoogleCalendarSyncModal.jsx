@@ -3,6 +3,8 @@ import "./Modal.css";
 import { supabase } from "./supabaseClient.jsx";
 import { GoogleAccountManage } from "../services/googleAuthService.jsx";
 import { useGoogleLogin } from "@react-oauth/google";
+import { getUserInfoFromValidToken } from "../services/tokenManager.js";
+import { decryptToken } from "../utils/encryption.js";
 
 const { saveErrorLog } = GoogleAccountManage;
 
@@ -210,9 +212,52 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     return Math.abs(hash).toString(36).substring(0, 8);
   };
 
+  // DB에서 Google access token 가져오기 (JWT 기반)
+  const getGoogleAccessTokenFromDB = async () => {
+    try {
+      // 1. 유효한 JWT에서 user_id 추출
+      const userInfo = await getUserInfoFromValidToken();
+      if (!userInfo || !userInfo.user_id) {
+        return null;
+      }
+
+      // 2. work_users 테이블에서 id 조회 (user_id로)
+      const { data: workUser, error: workUserError } = await supabase
+        .from('work_users')
+        .select('id')
+        .eq('user_id', userInfo.user_id)
+        .single();
+
+      if (workUserError || !workUser) {
+        console.error('Failed to get work_user id:', workUserError);
+        return null;
+      }
+
+      // 3. social_login_users 테이블에서 provider_access_token 조회
+      const { data: socialLogin, error: socialError } = await supabase
+        .from('social_login_users')
+        .select('provider_access_token')
+        .eq('user_id', workUser.id)
+        .eq('provider', 'google')
+        .single();
+
+      if (socialError || !socialLogin?.provider_access_token) {
+        console.error('Failed to get Google access token from DB:', socialError);
+        return null;
+      }
+
+      // 암호화된 토큰을 복호화하여 반환
+      const decryptedToken = decryptToken(socialLogin.provider_access_token);
+      return decryptedToken;
+    } catch (error) {
+      console.error('Error getting Google access token from DB:', error);
+      return null;
+    }
+  };
+
   // 해당 날짜에 이미 교대근무 일정이 있는지 확인
   const checkExistingShiftEvent = async (date) => {
-    const accessToken = sessionStorage.getItem("access_token");
+    const accessToken = await getGoogleAccessTokenFromDB();
     if (!accessToken) return false;
 
     const timeMin = new Date(date);
@@ -299,9 +344,10 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
 
   // Google Calendar API에 일정 추가
   const addEventToGoogleCalendar = async (event) => {
-    const accessToken = sessionStorage.getItem("access_token");
+    // JWT 기반으로 DB에서 Google access token 가져오기
+    const accessToken = await getGoogleAccessTokenFromDB();
     if (!accessToken) {
-      throw new Error("Google 액세스 토큰이 없습니다.");
+      throw new Error("Google 액세스 토큰을 가져올 수 없습니다. Google Calendar 연동을 확인해주세요.");
     }
 
     const response = await fetch(
@@ -357,11 +403,11 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
           return;
         }
 
-        // sessionStorage에 access_token 저장
-        sessionStorage.setItem('access_token', access_token);
+        // google_email만 sessionStorage에 저장 (access_token은 DB에만 저장됨)
         if (result.google_email) {
           sessionStorage.setItem('google_email', result.google_email);
         }
+        // access_token은 DB에만 저장됨 (linkGoogleToCurrentUser 함수에서 처리)
 
         // 재인증 성공 후 일정 등록 자동 계속
         if (pendingSyncRef.current) {
@@ -405,11 +451,12 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
       return;
     }
 
-    // access_token 확인
-    const accessToken = sessionStorage.getItem("access_token");
-    const googleEmail = sessionStorage.getItem("google_email");
+    // JWT 기반으로 DB에서 Google access token 확인
+    const accessToken = await getGoogleAccessTokenFromDB();
+    const googleEmail = sessionStorage.getItem("google_email"); // fallback용
     
     if (!accessToken) {
+      // DB에서 Google access token을 가져올 수 없는 경우
       // google_email이 있으면 이미 연동된 상태이므로 재인증 필요
       if (googleEmail) {
         const shouldReauth = confirm(
@@ -429,7 +476,7 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         await saveErrorLog(
           'GoogleCalendarSyncModal',
           'MISSING_ACCESS_TOKEN',
-          '일정 등록 시도 시 access_token이 없음 (연동도 안됨)',
+          '일정 등록 시도 시 DB에서 Google access_token을 가져올 수 없음 (연동도 안됨)',
           userId
         );
         return;
@@ -670,7 +717,8 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     try {
       setIsDeleting(true);
       setShowPreview(false);
-      const accessToken = sessionStorage.getItem("access_token");
+      // JWT 기반으로 DB에서 Google access token 가져오기
+      const accessToken = await getGoogleAccessTokenFromDB();
 
       if (!accessToken) {
         alert("Google Calendar 연동이 필요합니다.");
@@ -812,7 +860,8 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
 
     try {
       setIsDeleting(true);
-      const accessToken = sessionStorage.getItem("access_token");
+      // JWT 기반으로 DB에서 Google access token 가져오기
+      const accessToken = await getGoogleAccessTokenFromDB();
 
       if (!accessToken) {
         alert("Google Calendar 연동이 필요합니다.");
@@ -1351,4 +1400,3 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
 }
 
 export default GoogleCalendarSyncModal;
-

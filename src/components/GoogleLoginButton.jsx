@@ -34,15 +34,19 @@ const GoogleLoginButton = () => {
 
         const { user } = result;
         
-        // Google Calendar API용 토큰 및 이메일 저장 (JWT와 별개)
-        sessionStorage.setItem('access_token', access_token);
+        // Google Calendar API용 이메일만 sessionStorage에 저장 (JWT와 별개)
+        // access_token은 DB에만 저장 (googleAuthService.jsx의 signInWithGoogle에서 처리)
         sessionStorage.setItem('google_email', user?.email || '');
 
         // DAYF JWT 토큰 발급 (user_id, user_name, login_type 포함)
-        await issueTokensOnLogin(
+        const tokenResult = await issueTokensOnLogin(
           { user_id: user?.email, user_name: user?.name || 'GoogleUser' },
           'google'
         );
+        if (!tokenResult?.accessToken) {
+          alert('로그인 토큰 발급에 실패했습니다. 다시 시도해주세요.');
+          return;
+        }
 
         alert(`${user?.name || '사용자'}님 환영합니다!`);
         navigate('/');
@@ -66,7 +70,7 @@ const GoogleLoginButton = () => {
   return (
     <button 
       onClick={() => { 
-        sessionStorage.removeItem('access_token'); 
+        // access_token은 DB에만 저장되므로 sessionStorage 제거 불필요
         loginWithGoogle(); 
       }} 
       style={{

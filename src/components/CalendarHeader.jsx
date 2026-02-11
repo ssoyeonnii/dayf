@@ -6,7 +6,7 @@ import CalDateModal from "./CalDateModal";
 import GoogleCalendarSyncModal from "./GoogleCalendarSyncModal";
 import "./CalendarHeader.css";
 import { supabase } from "./supabaseClient.jsx"; //구글 연동 정보 체크 필요
-import { clearTokensOnLogout, getUserInfoFromToken, attemptAutoLogin } from "../services/tokenManager.js";
+import { clearTokensOnLogout, getUserInfoFromValidToken, attemptAutoLogin } from "../services/tokenManager.js";
 
 function CalendarHeader({
   year,
@@ -23,6 +23,7 @@ function CalendarHeader({
 
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState(null);
+  const [loginType, setLoginType] = useState(null);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
   const [isUserTooltipOpen, setIsUserTooltipOpen] = useState(false);
   const [isSettingsTooltipOpen, setIsSettingsTooltipOpen] = useState(false);
@@ -32,6 +33,9 @@ function CalendarHeader({
 
   // JWT 토큰에서 로그인 정보 불러오기 및 Google 연동 상태 확인
   useEffect(() => {
+    // 기존에 저장된 Google access_token 제거 (DB에만 저장하도록 변경)
+    sessionStorage.removeItem('access_token');
+    
     const loadUserInfo = async () => {
       // 자동 로그인 시도 (토큰 검증)
       const autoLoginResult = await attemptAutoLogin();
@@ -42,7 +46,7 @@ function CalendarHeader({
       }
 
       // JWT 토큰에서 사용자 정보 가져오기
-      const userInfo = getUserInfoFromToken();
+      const userInfo = await getUserInfoFromValidToken();
       if (!userInfo || !userInfo.user_id) {
         // 토큰이 없거나 유효하지 않으면 로그인 페이지로 이동
         navigate("/UserLogin");
@@ -51,39 +55,17 @@ function CalendarHeader({
 
       setUserId(userInfo.user_id);
       setUserName(userInfo.user_name);
+      setLoginType(userInfo.login_type || "normal");
       
-      // Google 연동 상태 확인 (sessionStorage 우선 확인)
+      // Google 연동 상태 확인 (DB에서 확인)
       const storedGoogleEmail = sessionStorage.getItem("google_email");
-      const storedAccessToken = sessionStorage.getItem("access_token");
-
+      
       // 1순위: sessionStorage에 google_email이 있으면 연동된 것으로 판단 (DB 조회 불필요)
       if (storedGoogleEmail) {
         setIsGoogleCalendarConnected(true);
         setGoogleEmail(storedGoogleEmail);
       } 
-      // 2순위: google_email은 없지만 access_token이 있으면 연동된 것으로 판단
-      else if (storedAccessToken) {
-        setIsGoogleCalendarConnected(true);
-        // access_token은 있지만 google_email이 없는 경우 DB에서 조회
-        const checkGoogleEmailFromDB = async () => {
-          try {
-            const { data, error } = await supabase
-              .from("work_users")
-              .select("google_email")
-              .eq("user_id", userInfo.user_id)
-              .maybeSingle();
-
-            if (!error && data && data.google_email) {
-              setGoogleEmail(data.google_email);
-              sessionStorage.setItem("google_email", data.google_email);
-            }
-          } catch (error) {
-            console.error("Google email 조회 오류:", error);
-          }
-        };
-        checkGoogleEmailFromDB();
-      }
-      // 3순위: 둘 다 없으면 DB에서 연동 정보 확인
+      // 2순위: DB에서 Google 연동 정보 확인
       else {
         const checkGoogleConnection = async () => {
           try {
@@ -147,11 +129,10 @@ function CalendarHeader({
     // 설정 툴팁 열 때는 이미 저장된 상태만 사용 (DB 조회 없음)
     // 초기 useEffect에서 이미 DB 조회를 통해 상태를 설정했으므로
     // 추가 조회 없이 현재 state를 그대로 사용
-    // 단, 방금 연동한 경우를 대비해 sessionStorage에 access_token이 있으면 상태 업데이트
-    const storedAccessToken = sessionStorage.getItem("access_token");
+    // 단, 방금 연동한 경우를 대비해 sessionStorage에 google_email이 있으면 상태 업데이트
     const storedGoogleEmail = sessionStorage.getItem("google_email");
     
-    if (storedAccessToken && storedGoogleEmail && !isGoogleCalendarConnected) {
+    if (storedGoogleEmail && !isGoogleCalendarConnected) {
       // 방금 연동한 경우 (state는 아직 업데이트 안됨)
       setIsGoogleCalendarConnected(true);
       setGoogleEmail(storedGoogleEmail);
@@ -164,14 +145,12 @@ function CalendarHeader({
 
   const handleLogout = async () => {
     // JWT 토큰에서 사용자 ID 가져오기
-    const userInfo = getUserInfoFromToken();
-    const currentUserId = userInfo?.user_id || null;
+    const currentUserId = userId || null;
 
     // DAYF JWT 토큰 정리
     await clearTokensOnLogout(currentUserId);
 
-    // Google Calendar 관련 정보도 제거
-    sessionStorage.removeItem("access_token");
+    // Google Calendar 관련 정보 제거 (access_token은 DB에만 저장되므로 제거 불필요)
     sessionStorage.removeItem("google_email");
     
     // 기존 sessionStorage 값들도 제거 (마이그레이션 기간 동안)
@@ -264,8 +243,8 @@ function CalendarHeader({
         const { user, google_email } = result;
         const finalGoogleEmail = google_email || user?.email;
 
-        // 세션에 access_token과 google_email 저장
-        sessionStorage.setItem('access_token', access_token);
+        // google_email만 sessionStorage에 저장 (access_token은 DB에만 저장됨)
+        // access_token은 linkGoogleToCurrentUser 함수에서 DB에 저장됨
         if (finalGoogleEmail) {
           sessionStorage.setItem('google_email', finalGoogleEmail);
         }
@@ -307,8 +286,7 @@ function CalendarHeader({
     if (!shouldConnect) {
       return; // 사용자가 취소하면 연동 중단
     }
-    // access_token 초기화 후 연동 시작
-    sessionStorage.removeItem('access_token');
+    // 연동 시작 (access_token은 DB에만 저장되므로 sessionStorage 제거 불필요)
     connectGoogleCalendar();
   };
 
@@ -340,8 +318,7 @@ function CalendarHeader({
     }
 
     try {    
-        // 세션에서 access_token과 google_email 제거
-        sessionStorage.removeItem('access_token');
+        // 세션에서 google_email 제거 (access_token은 DB에만 저장되므로 제거 불필요)
         sessionStorage.removeItem('google_email');
 
         // DB에서도 Google 연동 정보 제거
@@ -512,7 +489,7 @@ function CalendarHeader({
                     <span className="user-tooltip-name">{userName}님</span>
                   </div>
                   <div className="user-tooltip-actions">
-                    {getUserInfoFromToken()?.login_type !== 'google' && (
+                    {loginType !== 'google' && (
                       <button 
                       className="user-tooltip-btn primary" 
                       onClick={handleUserUpdate}

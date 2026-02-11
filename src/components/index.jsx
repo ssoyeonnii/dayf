@@ -2,7 +2,7 @@ import { Calendar, Settings, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import "./index.css";
-import { getUserInfoFromToken } from "../services/tokenManager.js";
+import { getUserInfoFromValidToken } from "../services/tokenManager.js";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -166,12 +166,17 @@ const Index = () => {
 
   // JWT 토큰에서 로그인 정보 불러오기
   useEffect(() => {
-    const userInfo = getUserInfoFromToken();
-
-    if (userInfo && userInfo.user_id && userInfo.user_name) {
-      // JWT 토큰이 있으면 calendar.jsx로 이동
-      navigate("/calendar");
-    }
+    // 기존에 저장된 Google access_token 제거 (DB에만 저장하도록 변경)
+    sessionStorage.removeItem('access_token');
+    
+    const checkLogin = async () => {
+      const userInfo = await getUserInfoFromValidToken();
+      if (userInfo && userInfo.user_id && userInfo.user_name) {
+        // JWT 토큰이 있으면 calendar.jsx로 이동
+        navigate("/calendar");
+      }
+    };
+    checkLogin();
   }, [navigate]);
 
   // 회원가입 페이지
