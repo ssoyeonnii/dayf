@@ -8,8 +8,13 @@ import DeleteAccount from "./components/DeleteAccount"; // 회원탈퇴 페이�
 import Index from "./components/index";
 import PrivacyPolicy from "./pages/PrivacyPolicy"; // 개인정보처리방침 페이지
 import TermsOfService from "./pages/TermsOfService"; // 이용약관 페이지
-
 function App() {
+  // 앱 초기화 시 기존에 저장된 Google access_token 제거 (DB에만 저장하도록 변경)
+  // 이전 버전에서 sessionStorage에 저장된 값이 남아있을 수 있으므로 제거
+  if (sessionStorage.getItem('access_token')) {
+    sessionStorage.removeItem('access_token');
+  }
+
   return (
     <Router>
       <Routes>
