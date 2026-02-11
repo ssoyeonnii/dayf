@@ -2,6 +2,7 @@
 // Requires Supabase client configured in src/components/supabaseClient.jsx
 
 import { supabase } from "../components/supabaseClient.jsx";
+import { encryptToken } from "../utils/encryption.js";
 
 async function fetchGoogleUserInfo(accessToken) {
   const resp = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
@@ -92,11 +93,12 @@ async function linkGoogleToCurrentUser(currentUserId, accessToken) {
 
   if (existingLink) {
   // 이미 row 있으면 provider_user_id와 토큰 최신 값으로 업데이트
+  const encryptedToken = encryptToken(accessToken);
   const { error: updateSocialErr } = await supabase
     .from("social_login_users")
     .update({
       provider_user_id: googleSub,
-      provider_access_token: accessToken,
+      provider_access_token: encryptedToken,  // 암호화된 토큰 저장
       provider_refresh_token: null  // implicit flow에서는 refresh_token 미제공
     })
     .eq("user_id", currentUserNum)
@@ -107,13 +109,14 @@ async function linkGoogleToCurrentUser(currentUserId, accessToken) {
     }
   } else {
   // 없으면 새로 insert
+  const encryptedToken = encryptToken(accessToken);
   const { error: insertSocialErr } = await supabase
     .from("social_login_users")
     .insert({
       user_id: currentUserNum,   // work_users.id
       provider: "google",
       provider_user_id: googleSub,
-      provider_access_token: accessToken,
+      provider_access_token: encryptedToken,  // 암호화된 토큰 저장
       provider_refresh_token: null  // implicit flow에서는 refresh_token 미제공
     });
 
@@ -196,11 +199,12 @@ if (existingLink && (!dayfUser || existingLink.user_id !== dayfUser.id)) {
   .maybeSingle();
 
   if (existingLink2) {
+  const encryptedToken = encryptToken(accessToken);
   const { error: updateSocialErr } = await supabase
     .from("social_login_users")
     .update({
       provider_user_id: googleSub,
-      provider_access_token: accessToken,
+      provider_access_token: encryptedToken,  // 암호화된 토큰 저장
       provider_refresh_token: null  // implicit flow에서는 refresh_token 미제공
     })
     .eq("user_id", userNum)
@@ -210,13 +214,14 @@ if (existingLink && (!dayfUser || existingLink.user_id !== dayfUser.id)) {
       throw new Error("DB_UPDATE_FAILED: " + updateSocialErr.message);
     }
   } else {
+  const encryptedToken = encryptToken(accessToken);
   const { error: insertSocialErr } = await supabase
     .from("social_login_users")
     .insert({
       user_id: userNum,
       provider: "google",
       provider_user_id: googleSub,
-      provider_access_token: accessToken,
+      provider_access_token: encryptedToken,  // 암호화된 토큰 저장
       provider_refresh_token: null  // implicit flow에서는 refresh_token 미제공
     });
 
