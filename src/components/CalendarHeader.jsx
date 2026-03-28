@@ -5,7 +5,7 @@ import GoogleAccountManage from "../services/googleAuthService.jsx";
 import CalDateModal from "./CalDateModal";
 import GoogleCalendarSyncModal from "./GoogleCalendarSyncModal";
 import "./CalendarHeader.css";
-import { supabase } from "./supabaseClient.jsx"; //구글 연동 정보 체크 필요
+import { callAppApi } from "../services/appApi.js"; //구글 연동 정보 체크 필요
 import { clearTokensOnLogout, getUserInfoFromValidToken, attemptAutoLogin } from "../services/tokenManager.js";
 
 function CalendarHeader({
@@ -69,13 +69,12 @@ function CalendarHeader({
       else {
         const checkGoogleConnection = async () => {
           try {
-            const { data, error } = await supabase
-              .from("work_users")
-              .select("google_sub, google_email")
-              .eq("user_id", userInfo.user_id)
-              .maybeSingle();
-
-            if (error) {
+            let data = null;
+            try {
+              data = await callAppApi("google_link_status", {
+                user_id: userInfo.user_id,
+              });
+            } catch (error) {
               console.error("Google 연동 상태 조회 오류:", error);
               setIsGoogleCalendarConnected(false);
               setGoogleEmail(null);
@@ -199,30 +198,14 @@ function CalendarHeader({
 
         if (result?.error) {
           if (result.error === 'EMAIL_IS_USERID') {
-            const confirmed = confirm(
-              `선택하신 Google 계정(${result.conflictUserId})은 이미 Dayf 계정 ID로 등록되어 있습니다.\n` +
-              `연동 시 다음에 유의해주세요:\n` +
-              `• 해당 Google 계정이 현재 계정(${userId})에 연동됩니다.\n` +
-              `• 이후 해당 Google 계정으로는 직접 로그인할 수 없습니다.\n` +
-              `• 기존에 저장된 근무 설정이 모두 삭제됩니다.\n` +
-              `확인 버튼을 클릭하면 연동 완료됩니다.`
+            const errmsg =
+              `Google 계정 이메일이 기존 Dayf 계정 ID와 충돌하여 연동 불가: ${result.conflictUserId}`;
+            alert(
+              `선택하신 Google 계정(${result.conflictUserId})은 이미 다른 Dayf 계정 ID로 사용 중입니다.\n` +
+              `현재 로그인한 계정(${userId})에는 바로 연동할 수 없습니다.\n` +
+              `다른 Google 계정을 선택하거나, 기존 Dayf 계정 정리 후 다시 시도해주세요.`
             );
-            let errmsg = '';
-            if (confirmed) {
-              const del = await GoogleAccountManage.deleteAccount(result.conflictUserId);
-              if (del.success) {
-                alert(`${result.conflictUserId} 계정이 삭제되었습니다. Google Calendar 연동을 다시 진행해주세요.`);
-                handleGoogleCalendarConnect();
-                return; //계정 삭제 후 saveErrorLog()함수 호출 안됨
-              } else {
-                errmsg = 'dayf 계정 ID의 google 계정 삭제 중 오류가 발생했습니다.';
-                alert('계정 삭제 중 오류가 발생했습니다.');
-              }
-            } else {
-              errmsg = 'Google Calendar 연동이 취소되었습니다.';
-              alert('Google Calendar 연동이 취소되었습니다.');
-            }
-            await saveErrorLog('CalendarHeader', 409, errmsg +`: ${result.conflictUserId}`);
+            await saveErrorLog('CalendarHeader', 409, errmsg);
             return;
           }
           if (result.error === 'ALREADY_LINKED') {

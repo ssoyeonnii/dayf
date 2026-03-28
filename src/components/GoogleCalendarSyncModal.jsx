@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Modal.css";
-import { supabase } from "./supabaseClient.jsx";
+import { callAppApi } from "../services/appApi.js";
 import { GoogleAccountManage } from "../services/googleAuthService.jsx";
 import { useGoogleLogin } from "@react-oauth/google";
 import { getUserInfoFromValidToken } from "../services/tokenManager.js";
@@ -84,13 +84,10 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
     const fetchShiftConfig = async () => {
       if (!userId || !isOpen) return;
 
-      const { data, error } = await supabase
-        .from("work_user_shifts")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (error) {
+      let data = null;
+      try {
+        data = await callAppApi("shifts_get", { user_id: userId });
+      } catch (error) {
         console.error("교대근무 설정 조회 오류:", error);
         alert("교대근무 설정을 불러오는 중 오류가 발생했습니다.");
         return;
@@ -221,28 +218,18 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         return null;
       }
 
-      // 2. work_users 테이블에서 id 조회 (user_id로)
-      const { data: workUser, error: workUserError } = await supabase
-        .from('work_users')
-        .select('id')
-        .eq('user_id', userInfo.user_id)
-        .single();
-
-      if (workUserError || !workUser) {
-        console.error('Failed to get work_user id:', workUserError);
+      // 2. social_login_users 테이블에서 provider_access_token 조회
+      let socialLogin = null;
+      try {
+        socialLogin = await callAppApi("social_get_access_token", {
+          user_id: userInfo.user_id,
+        });
+      } catch (socialError) {
+        console.error('Failed to get Google access token from DB:', socialError);
         return null;
       }
-
-      // 3. social_login_users 테이블에서 provider_access_token 조회
-      const { data: socialLogin, error: socialError } = await supabase
-        .from('social_login_users')
-        .select('provider_access_token')
-        .eq('user_id', workUser.id)
-        .eq('provider', 'google')
-        .single();
-
-      if (socialError || !socialLogin?.provider_access_token) {
-        console.error('Failed to get Google access token from DB:', socialError);
+      if (!socialLogin?.provider_access_token) {
+        console.error('Failed to get Google access token from DB: empty');
         return null;
       }
 
@@ -300,21 +287,15 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
   //Log_google_calendar_events 테이블에 구글캘린더의 일정 정보 저장하는 함수 (등록/삭제 통합)
   const saveEventToSupabase = async (eventData) => {
     try {
-      const { data, error } = await supabase
-        .from('Log_google_calendar_events')
-        .insert([{
-          user_id: eventData.user_id,
-          dayf_event_id: eventData.dayf_event_id,
-          google_event_id: eventData.google_event_id || '', // 등록 시 빈 값, 삭제 시 실제 값
-          shift_type: eventData.shift_type,
-          event_date: eventData.event_date,
-          process_type: eventData.process_type, // 1: 입력, 2: 삭제
-          status: eventData.status // 'pending', 'success', 'failed'
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await callAppApi("calendar_event_insert", {
+        user_id: eventData.user_id,
+        dayf_event_id: eventData.dayf_event_id,
+        google_event_id: eventData.google_event_id || '', // 등록 시 빈 값, 삭제 시 실제 값
+        shift_type: eventData.shift_type,
+        event_date: eventData.event_date,
+        process_type: eventData.process_type, // 1: 입력, 2: 삭제
+        status: eventData.status // 'pending', 'success', 'failed'
+      });
       return data;
     } catch (error) {
       console.error("Supabase 저장 실패:", error);
@@ -325,16 +306,12 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
   //Log_google_calendar_events 테이블에 google calendar 일정 등록 후 status 업데이트 함수
   const updateEventStatus = async (dayf_event_id, google_event_id, status) => {
     try {
-      const { error } = await supabase
-        .from('Log_google_calendar_events')
-        .update({
-          google_event_id: google_event_id,
-          process_type: status === 'success' ? 1 : 1,// 실패해도 process_type은 1 유지
-          status: status
-        })
-        .eq('dayf_event_id', dayf_event_id);
-
-      if (error) throw error;
+      await callAppApi("calendar_event_update_status", {
+        dayf_event_id,
+        google_event_id,
+        process_type: status === 'success' ? 1 : 1,// 실패해도 process_type은 1 유지
+        status,
+      });
     } catch (error) {
       console.error("Supabase 업데이트 실패:", error);
       throw error;
@@ -393,7 +370,14 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         const result = await GoogleAccountManage.linkGoogleToCurrentUser(userId, access_token);
         
         if (result?.error) {
-          alert(`재인증 오류: ${result.message || result.error}`);
+          if (result.error === 'EMAIL_IS_USERID') {
+            alert(
+              `선택하신 Google 계정(${result.conflictUserId})은 이미 다른 Dayf 계정 ID로 사용 중입니다.\n` +
+              `다른 Google 계정을 선택하거나, 기존 Dayf 계정 정리 후 다시 시도해주세요.`
+            );
+          } else {
+            alert(`재인증 오류: ${result.message || result.error}`);
+          }
           await saveErrorLog(
             'GoogleCalendarSyncModal',
             'REAUTH_ERROR',
@@ -404,8 +388,9 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
         }
 
         // google_email만 sessionStorage에 저장 (access_token은 DB에만 저장됨)
-        if (result.google_email) {
-          sessionStorage.setItem('google_email', result.google_email);
+        const finalGoogleEmail = result.google_email || result.user?.email;
+        if (finalGoogleEmail) {
+          sessionStorage.setItem('google_email', finalGoogleEmail);
         }
         // access_token은 DB에만 저장됨 (linkGoogleToCurrentUser 함수에서 처리)
 
@@ -586,11 +571,14 @@ function GoogleCalendarSyncModal({ isOpen, onClose, userId }) {
               const eventDate = event.start.date;
 
               // Supabase에 레코드가 없으면 생성하고, 있으면 업데이트
-              const { data: existing } = await supabase
-                .from('Log_google_calendar_events')
-                .select('id')
-                .eq('dayf_event_id', dayfEventId)
-                .single();
+              let existing = null;
+              try {
+                existing = await callAppApi("calendar_event_get", {
+                  dayf_event_id: dayfEventId,
+                });
+              } catch {
+                existing = null;
+              }
 
               if (!existing) {
                 // 레코드가 없으면 생성

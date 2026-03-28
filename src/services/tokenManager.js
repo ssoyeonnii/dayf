@@ -1,4 +1,4 @@
-import { supabase } from '../components/supabaseClient.jsx';
+import { callAppApi } from './appApi.js';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -12,6 +12,15 @@ const TOKEN_KEYS = {
   ACCESS: 'dayf_jwt',
   REFRESH: 'dayf_refresh_token',
 };
+
+export function clearClientSession() {
+  sessionStorage.removeItem(TOKEN_KEYS.ACCESS);
+  sessionStorage.removeItem('access_token');
+  sessionStorage.removeItem('google_email');
+  sessionStorage.removeItem('userId');
+  sessionStorage.removeItem('userName');
+  sessionStorage.removeItem('googleuser');
+}
 
 /**
  * 로그인 시 토큰 발급 및 저장
@@ -47,15 +56,13 @@ export async function issueTokensOnLogin(user, loginType) {
  * @param {string} refreshToken - Refresh Token
  */
 async function saveTokensToDB(userId, accessToken, refreshToken) {
-  const { error } = await supabase
-    .from('work_users')
-    .update({
-      dayf_access_token: accessToken,
-      dayf_refresh_token: refreshToken,
-    })
-    .eq('user_id', userId);
-
-  if (error) {
+  try {
+    await callAppApi("tokens_save", {
+      user_id: userId,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+  } catch (error) {
     console.error('Failed to save tokens to DB:', error);
   }
 }
@@ -82,14 +89,17 @@ export async function getValidAccessToken() {
       }
 
       // DB에서 Refresh Token 가져오기
-      const { data, error } = await supabase
-        .from('work_users')
-        .select('dayf_refresh_token')
-        .eq('user_id', userInfo.user_id)
-        .single();
-
-      if (error || !data?.dayf_refresh_token) {
+      let data;
+      try {
+        data = await callAppApi("tokens_get_refresh", {
+          user_id: userInfo.user_id,
+        });
+      } catch (error) {
         console.error('Failed to get refresh token from DB:', error);
+        return null;
+      }
+      if (!data?.dayf_refresh_token) {
+        console.error('Failed to get refresh token from DB: empty token');
         return null;
       }
 
@@ -189,13 +199,15 @@ export async function validateCurrentTokens() {
   }
 
   // DB에서 Refresh Token 가져오기
-  const { data, error } = await supabase
-    .from('work_users')
-    .select('dayf_refresh_token')
-    .eq('user_id', userInfo.user_id)
-    .single();
-
-  if (error || !data?.dayf_refresh_token) {
+  let data;
+  try {
+    data = await callAppApi("tokens_get_refresh", {
+      user_id: userInfo.user_id,
+    });
+  } catch (error) {
+    return { valid: false, reason: 'NO_REFRESH_TOKEN' };
+  }
+  if (!data?.dayf_refresh_token) {
     return { valid: false, reason: 'NO_REFRESH_TOKEN' };
   }
 
@@ -213,20 +225,13 @@ export async function validateCurrentTokens() {
  * @param {string} userId - 사용자 ID
  */
 export async function clearTokensOnLogout(userId) {
-  // SessionStorage에서 Access Token만 제거 (Refresh Token은 저장하지 않으므로 제거 불필요)
-  sessionStorage.removeItem(TOKEN_KEYS.ACCESS);
+  clearClientSession();
 
   // DB에서 토큰 제거
   if (userId) {
-    const { error } = await supabase
-      .from('work_users')
-      .update({
-        dayf_access_token: null,
-        dayf_refresh_token: null,
-      })
-      .eq('user_id', userId);
-
-    if (error) {
+    try {
+      await callAppApi("tokens_clear", { user_id: userId });
+    } catch (error) {
       console.error('Failed to clear tokens from DB:', error);
     }
   }

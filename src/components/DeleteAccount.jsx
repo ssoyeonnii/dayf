@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "./supabaseClient.jsx";
-import bcrypt from "bcryptjs";
+import { callAppApi } from "../services/appApi.js";
 import { useNavigate,useParams } from "react-router-dom";
-import { getUserInfoFromValidToken } from "../services/tokenManager.js";
+import { clearClientSession, getUserInfoFromValidToken } from "../services/tokenManager.js";
 import GoogleAccountManage from "../services/googleAuthService.jsx";
 
 function DeleteAccount() {
@@ -67,25 +66,12 @@ function DeleteAccount() {
           );
         } catch {}
       }
-       // 1. DB에서 현재 유저의 해시된 비밀번호 조회
-      const { data, error } = await supabase
-        .from("work_users")
-        .select("user_pw")
-        .eq("user_id", userId)
-        .single();
-
-      if (error) {
-        alert("사용자 정보를 불러오는 데 실패했습니다.");
-        return;
-      }
-
       if (!isGoogleUser) {
-        const hashedPassword = data.user_pw;
-
-        // 2. 입력한 비밀번호와 DB 해시값 비교
-        const isMatch = await bcrypt.compare(password, hashedPassword);
-
-        if (!isMatch) {
+        const result = await callAppApi("user_verify_password", {
+          user_id: userId,
+          user_pw: password,
+        });
+        if (!result?.valid) {
           alert("비밀번호가 일치하지 않습니다.");
           return;
         }
@@ -94,34 +80,11 @@ function DeleteAccount() {
         return;
       }
       // 3. 탈퇴 처리
-      // 3.1. work_user_shift테이블에서 user_id를 참조하는 데이터 삭제
-      const { error: deleteShiftError } = await supabase
-        .from("work_user_shifts")
-        .delete()
-        .eq("user_id", userId);
+      await callAppApi("user_delete", { user_id: userId });
 
-      if (deleteShiftError) {
-        alert("회원 교대 근무 정보 삭제 실패: " + deleteShiftError.message);
-      }
-
-      // 3.2. work_users테이블에서 user 데이터 삭제
-      const { error: deleteError } = await supabase
-        .from("work_users")
-        .delete()
-        .eq("user_id", userId);
-
-      if (deleteError) {
-        alert("회원 탈퇴 실패: " + deleteError.message);
-      } else {
-        alert("회원 탈퇴가 완료되었습니다.");
-        // 모든 sessionStorage 값 제거 (access_token은 DB에만 저장되므로 제거 불필요)
-        sessionStorage.removeItem("google_email");
-        // 기존 sessionStorage 값들도 제거 (마이그레이션 기간 동안)
-        sessionStorage.removeItem("userId");
-        sessionStorage.removeItem("userName");
-        sessionStorage.removeItem("googleuser");
-        navigate("/");
-      }
+      alert("회원 탈퇴가 완료되었습니다.");
+      clearClientSession();
+      navigate("/");
 
     } catch (err) {
       console.error(err);
