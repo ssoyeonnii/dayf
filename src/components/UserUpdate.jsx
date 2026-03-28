@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "./supabaseClient.jsx";
-import bcrypt from "bcryptjs";
+import { callAppApi } from "../services/appApi.js";
 import { useNavigate } from "react-router-dom";
 import "./UserJoin.css";
 import { getUserInfoFromValidToken, attemptAutoLogin, issueTokensOnLogin } from "../services/tokenManager.js";
@@ -51,20 +50,12 @@ function UserUpdate() {
     setErrorMsg("");
 
     try {
-      const { data, error } = await supabase
-        .from("work_users")
-        .select("user_pw")
-        .eq("user_id", userid)
-        .single();
+      const result = await callAppApi("user_verify_password", {
+        user_id: userid,
+        user_pw: currentPassword,
+      });
 
-      if (error) {
-        setErrorMsg("사용자 정보를 불러오는 데 실패했습니다.");
-        return;
-      }
-
-      const isPasswordCorrect = await bcrypt.compare(currentPassword, data.user_pw);
-      
-      if (isPasswordCorrect) {
+      if (result?.valid) {
         setIsPasswordVerified(true);
         setErrorMsg("");
       } else {
@@ -98,44 +89,32 @@ function UserUpdate() {
 
 
     try {
-      let updateData = { user_name: username };
-      
-      // 새 비밀번호가 입력된 경우에만 업데이트
-      if (newPassword) {
-        const hashedPw = await bcrypt.hash(newPassword, 10);
-        updateData.user_pw = hashedPw;
-      }
+      await callAppApi("user_update", {
+        user_id: userid,
+        user_name: username,
+        new_password: newPassword || null,
+      });
 
-      const { error } = await supabase
-        .from("work_users")
-        .update(updateData)
-        .eq("user_id", userid);
-
-      if (error) {
-        console.error("회원정보 수정 오류:", error.message);
-        alert("회원정보 수정에 실패했습니다.");
-      } else {
-        // JWT 토큰에서 현재 login_type 가져오기
-        const userInfo = await getUserInfoFromValidToken();
-        if (!userInfo || !userInfo.user_id) {
-          alert("로그인이 만료되었습니다. 다시 로그인해주세요.");
-          navigate("/UserLogin");
-          return;
-        }
-        const loginType = userInfo?.login_type || 'normal';
-        
-        // 이름이 변경된 경우 JWT 토큰 재발급
-        await issueTokensOnLogin(
-          { user_id: userid, user_name: username },
-          loginType
-        );
-        
-        // sessionStorage 업데이트 (fallback용, 마이그레이션 기간 동안)
-        sessionStorage.setItem("userName", username);
-        
-        alert("회원정보가 수정되었습니다!");
-        navigate("/");
+      // JWT 토큰에서 현재 login_type 가져오기
+      const userInfo = await getUserInfoFromValidToken();
+      if (!userInfo || !userInfo.user_id) {
+        alert("로그인이 만료되었습니다. 다시 로그인해주세요.");
+        navigate("/UserLogin");
+        return;
       }
+      const loginType = userInfo?.login_type || 'normal';
+
+      // 이름이 변경된 경우 JWT 토큰 재발급
+      await issueTokensOnLogin(
+        { user_id: userid, user_name: username },
+        loginType
+      );
+
+      // sessionStorage 업데이트 (fallback용, 마이그레이션 기간 동안)
+      sessionStorage.setItem("userName", username);
+
+      alert("회원정보가 수정되었습니다!");
+      navigate("/");
     } catch (err) {
       console.error("회원정보 수정 실패:", err);
       alert("오류가 발생했습니다.");

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { supabase } from "./supabaseClient.jsx";
-import bcrypt from "bcryptjs";
+import { callAppApi } from "../services/appApi.js";
 import { useNavigate } from "react-router-dom";
 import "./UserJoin.css";
 import GoogleLoginButton from "./GoogleLoginButton.jsx";
@@ -22,28 +21,13 @@ function UserLogin() {
       return;
     }
 
-    // 1. DB에서 입력한 ID로 사용자 조회
-    const { data, error } = await supabase
-      .from("work_users")
-      .select("*")
-      .eq("user_id", userid)
-      .single();
+    try {
+      const data = await callAppApi(
+        "user_login",
+        { user_id: userid, user_pw: userpw },
+        { auth: false }
+      );
 
-    if (error || !data) {
-      setErrorMsg("존재하지 않는 아이디입니다.");
-      return;
-    }
-
-    // 2. Google 소셜 로그인 계정인지 확인
-    if (data.google_sub && !data.user_pw) {
-      setErrorMsg("Google 계정으로 가입하셨습니다. 'Google로 계속하기' 버튼을 이용해주세요.");
-      return;
-    }
-
-    // 3. 비밀번호 비교
-    const isPasswordCorrect = await bcrypt.compare(userpw, data.user_pw);
-
-    if (isPasswordCorrect) {
       alert(`${data.user_name}님 환영합니다!`);
 
       // Google Calendar 연동용 정보만 저장 (JWT 토큰에는 포함되지 않음)
@@ -62,8 +46,17 @@ function UserLogin() {
       }
 
       navigate("/"); //calendar.jsx로 이동
-    } else {
-      setErrorMsg("비밀번호가 일치하지 않습니다.");
+    } catch (error) {
+      const code = error?.message || "";
+      if (code === "GOOGLE_ACCOUNT") {
+        setErrorMsg("Google 계정으로 가입하셨습니다. 'Google로 계속하기' 버튼을 이용해주세요.");
+      } else if (code === "NOT_FOUND") {
+        setErrorMsg("존재하지 않는 아이디입니다.");
+      } else if (code === "INVALID_PASSWORD") {
+        setErrorMsg("비밀번호가 일치하지 않습니다.");
+      } else {
+        setErrorMsg("로그인에 실패했습니다. 다시 시도해주세요.");
+      }
     }
   };
 

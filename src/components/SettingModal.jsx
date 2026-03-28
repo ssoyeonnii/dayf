@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./Modal.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { supabase } from "./supabaseClient.jsx";
+import { callAppApi } from "../services/appApi.js";
 import { useNavigate } from "react-router-dom";
 
 function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
@@ -192,23 +192,12 @@ function SettingModal({ isOpen, onClose, onSave, initialConfig }) {
     };
 
     // 3. Supabase insert or update 실행 (configIdx가 있으면 update 없으면 insert)
-    let result;
-    if (configIdx) {
-      // console.log("codeidx가 없음");
-      // configIdx가 있으면 UPDATE
-      result = await supabase
-        .from("work_user_shifts")
-        .update(configToSave)
-        .eq("id", configIdx);
-    } else {
-      // console.log("codeidx가 없음");
-      // configIdx 없으면 INSERT
-      result = await supabase.from("work_user_shifts").insert([configToSave]);
-    }
-
-    const { data, error } = result;
-
-    if (error) {
+    try {
+      await callAppApi("shifts_upsert", {
+        ...configToSave,
+        ...(configIdx ? { id: configIdx } : {}),
+      });
+    } catch (error) {
       console.error("저장 오류:", error.message);
       alert("설정 저장에 실패했습니다.");
       return;

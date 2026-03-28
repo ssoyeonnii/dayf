@@ -1,6 +1,5 @@
 import React, { useState, useRef } from "react";
-import { supabase } from "./supabaseClient.jsx";
-import bcrypt from "bcryptjs";
+import { callAppApi } from "../services/appApi.js";
 import { useNavigate } from "react-router-dom";
 import "./UserJoin.css";
 import { issueTokensOnLogin } from "../services/tokenManager.js";
@@ -28,29 +27,28 @@ function UserJoin() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("work_users")
-      .select("user_id, google_sub")
-      .eq("user_id", value);
+    try {
+      const data = await callAppApi(
+        "user_duplicate_check",
+        { user_id: value },
+        { auth: false }
+      );
 
-    if (error) {
+      if (data.exists) {
+        if (data.google_sub) {
+          setCheckMsg("이미 Google 계정으로 가입되어 있습니다. Google 로그인을 이용해주세요.");
+          setIsDuplicate(true);
+        } else {
+          setCheckMsg("이미 존재하는 ID입니다.");
+          setIsDuplicate(true);
+        }
+      } else {
+        setCheckMsg("사용 가능한 ID입니다.");
+        setIsDuplicate(false);
+      }
+    } catch (error) {
       console.error("중복 확인 오류:", error.message);
       setCheckMsg("오류가 발생했습니다.");
-      setIsDuplicate(false);
-      return;
-    }
-
-    if (data.length > 0) {
-      // Google 소셜 로그인 계정인지 확인
-      if (data[0].google_sub) {
-        setCheckMsg("이미 Google 계정으로 가입되어 있습니다. Google 로그인을 이용해주세요.");
-        setIsDuplicate(true);
-      } else {
-        setCheckMsg("이미 존재하는 ID입니다.");
-        setIsDuplicate(true);
-      }
-    } else {
-      setCheckMsg("사용 가능한 ID입니다.");
       setIsDuplicate(false);
     }
   };
@@ -83,36 +81,28 @@ function UserJoin() {
     }
 
     try {
-      const hashedPw = await bcrypt.hash(userpw, 10);
+      await callAppApi(
+        "user_signup",
+        { user_id: userid, user_name: username, user_pw: userpw },
+        { auth: false }
+      );
 
-      const { data, error } = await supabase.from("work_users").insert([
-        {
-          user_id: userid,
-          user_pw: hashedPw,
-          user_name: username,
-        },
-      ]);
+      alert("회원가입 완료!");
 
-      if (error) {
-        console.error("회원가입 오류:", error.message);
-        alert("회원가입에 실패했습니다.");
-      } else {
-        alert("회원가입 완료!");
-        
-        // 자동 로그인 처리 - JWT 토큰 발급
-        await issueTokensOnLogin(
-          { user_id: userid, user_name: username },
-          'normal'
-        );
-        
-        setUsername("");
-        setUserid("");
-        setUserpw("");
-        setCheckMsg("");
-        navigate("/"); // 캘린더 페이지로 이동
-      }
+      // 자동 로그인 처리 - JWT 토큰 발급
+      await issueTokensOnLogin(
+        { user_id: userid, user_name: username },
+        'normal'
+      );
+
+      setUsername("");
+      setUserid("");
+      setUserpw("");
+      setCheckMsg("");
+      navigate("/"); // 캘린더 페이지로 이동
     } catch (err) {
-      console.error("비밀번호 암호화 실패:", err);
+      console.error("회원가입 오류:", err);
+      alert("회원가입에 실패했습니다.");
     }
   };
 

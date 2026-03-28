@@ -6,7 +6,7 @@ import { ShiftUtils } from "../utils/ShiftUtils";
 import DatePicker, { setDefaultLocale } from "react-datepicker";
 import SettingModal from "./SettingModal";
 import "react-datepicker/dist/react-datepicker.css";
-import { supabase } from "./supabaseClient.jsx";
+import { callAppApi } from "../services/appApi.js";
 import { getUserInfoFromValidToken, attemptAutoLogin } from "../services/tokenManager.js";
 import { useNavigate } from "react-router-dom";
 
@@ -77,11 +77,13 @@ function Calendar() {
         setUserId(id);
 
         const fetchUserConfig = async () => {
-        const { data, error } = await supabase
-          .from("work_user_shifts")
-          .select("*")
-          .eq("user_id", id)
-          .maybeSingle();
+        let data = null;
+        let error = null;
+        try {
+          data = await callAppApi("shifts_get", { user_id: id });
+        } catch (err) {
+          error = err;
+        }
 
         if (error || !data) {
           // 새로 가입한 사용자의 경우 조용히 기본 설정으로 초기화
@@ -235,16 +237,14 @@ function Calendar() {
           onSave={async () => {
             // 모달창이 닫히기 전 실행되는 콜백함수
             //모달창에서 값 저장 후 db에서 shiftconfig값 다시 select하여 변경된 UI 랜더링 
-            const { data, error } = await supabase
-              .from("work_user_shifts")
-              .select("*")
-              .eq("user_id", userId)
-              .maybeSingle();
-
-            if (error || !data) {
+            let data = null;
+            try {
+              data = await callAppApi("shifts_get", { user_id: userId });
+            } catch (error) {
               alert("사용자 설정 값을 저장했으나, 오류가 발생했습니다");
               return;
             }
+            if (!data) return;
 
             //pattern이 json이면 파싱, 아니면 배열 그대로 사용
             const parsedPattern =
