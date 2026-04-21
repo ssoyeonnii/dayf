@@ -351,13 +351,33 @@ Deno.serve(async (req) => {
           .eq("user_id", userId)
           .maybeSingle();
 
-        await supabase.from("work_user_shifts").delete().eq("user_id", userId);
-        await supabase.from("work_users").delete().eq("user_id", userId);
         if (userRow?.id) {
-          await supabase
+          const { error: socialDeleteError } = await supabase
             .from("social_login_users")
             .delete()
             .eq("user_id", userRow.id);
+
+          if (socialDeleteError) {
+            return jsonResponse({ error: socialDeleteError.message }, 500);
+          }
+        }
+
+        const { error: shiftDeleteError } = await supabase
+          .from("work_user_shifts")
+          .delete()
+          .eq("user_id", userId);
+
+        if (shiftDeleteError) {
+          return jsonResponse({ error: shiftDeleteError.message }, 500);
+        }
+
+        const { error: userDeleteError } = await supabase
+          .from("work_users")
+          .delete()
+          .eq("user_id", userId);
+
+        if (userDeleteError) {
+          return jsonResponse({ error: userDeleteError.message }, 500);
         }
 
         return jsonResponse({ data: { success: true } });
