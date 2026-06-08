@@ -10,6 +10,14 @@
     box-shadow: rgba(34, 126, 255, 0.1) 0px 3px 10px 0px;
   }
 
+  .mg-t-24 {
+    margin-top: 24px;
+  }
+
+  .mg-b-24 {
+    margin-bottom: 24px;
+  }
+
   .form-container form {
     margin: 0;
     padding: 0;
